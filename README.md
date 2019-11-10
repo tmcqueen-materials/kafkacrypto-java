@@ -41,6 +41,20 @@ This implementation is not idiomatic Java, rather a nearly direct mapping from t
 Available on PyPI at https://pypi.org/project/kafkacrypto/  
 Available on Github at https://github.com/tmcqueen-materials/kafkacrypto
 
+## Maven Central
+
+This code is available on Maven Central for use in project. You can include in `pom.xml`
+
+```xml
+    <dependency>
+      <groupId>org.kafkacrypto</groupId>
+      <artifactId>kafkacrypto-java</artifactId>
+      <version>0.9.9.1</version> <!-- change to latest version for best performance -->
+    </dependency>
+```
+
+To automatically include kafkacrypto-java in your build processes.
+
 ## Undecryptable Messages
 kafkacrypto is designed so that messages being sent can **always** be encrypted once a KafkaCrypto object is successfully created. However, it is possible for a consumer to receive a message for which it does not have a decryption key, i.e. an undecryptable message. This is most often because the asynchronous key exchange process has not completed before the message is received, or because the consumer is not authorized to receive on that topic. 
 
