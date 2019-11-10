@@ -169,8 +169,21 @@
   <artifactId>kafkacrypto-java</artifactId>
   <packaging>jar</packaging>
   <version>0.9.9.1-SNAPSHOT</version>
-  <name>kafkacrypto-java</name>
-  <url>http://maven.apache.org</url>
+  <name>${project.groupId}:${project.artifactId}</name>
+  <description>Java port of kafkacrypto, a lightweight and cross-platform/cross-language encryption library for Apache Kafka.</description>
+  <url>https://github.com/tmcqueen-materials/kafkacrypto-java</url>
+  <licenses>
+    <license>
+      <name>GNU General Public License v2.0</name>
+      <url>https://opensource.org/licenses/gpl-2.0.php</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <name>Tyrel M. McQueen</name>
+      <email>tmcqueen-materials@demoivre.com</email>
+    </developer>
+  </developers>
   <repositories>
     <repository>
       <id>jcenter</id>
