@@ -32,6 +32,8 @@ KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage> consumer = KafkaConsumer(..
 
 And that's it! Your producers and consumers should function as normal, but all traffic within Kafka is encrypted. 
 
+To generate the necessary cryptographic configuration files, you need to generate them first. There are many ways to accomplish this, for example through the use of [simple-provision.py](https://github.com/tmcqueen-materials/kafkacrypto/blob/master/tools/simple-provision.py).
+
 If automatic topic creation is disabled, then one more action is needed. For each "root topic" you must create the requisite key-passing topics. By default these are `root.reqs`, `root.subs` and `root.keys`, where root is replaced with the root topic name. It is safe to enable regular log compaction on these topics.
 
 This implementation is not idiomatic Java, rather a nearly direct mapping from the python implementation, to ease code maintenance. See the python code documentation for details of the implementation:
@@ -70,4 +72,4 @@ kafkacrypto separates the storage of cryptographic secrets and non-secret config
 
 Alternative implementations of Ratchet and Cryptokey enable secrets to be managed by specialized hardware (e.g. HSMs).
 
-It is also possible to use `my-node-ID.config` to manage all configuration directives, including those that control Kafka, using the load_value/store_value directives (see [KafkaCryptoStore](https://github.com/tmcqueen-materials/kafkacrypto-java/blob/master/src/main/java/org/kafkacrypto/KafkaCryptStore.java)).
+It is also possible to use `my-node-ID.config` to manage all configuration directives, including those that control Kafka, using the load_value/store_value directives (see [KafkaCryptoStore](https://github.com/tmcqueen-materials/kafkacrypto-java/blob/master/src/main/java/org/kafkacrypto/KafkaCryptoStore.java)).
