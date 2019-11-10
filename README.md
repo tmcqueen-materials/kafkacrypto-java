@@ -61,3 +61,13 @@ for (ConsumerRecord<KafkaCryptoMessage,KafkaCryptoMessage> msg : consumer) {
   }
 ```
 The convenience method `.getMessage()` can be used instead to return the message as bytes if successfully decrypted, or to raise a `KafkaCryptoMessageException` if decryption failed.
+
+## Universal Configuration File
+kafkacrypto separates the storage of cryptographic secrets and non-secret configuration information:
+  1. `my-node-ID.config`: Non-secret parameters, in Python ConfigParser / Windows ini format.
+  1. `my-node-ID.seed`: Next ratchet seed, when using default implementation of Ratchet. Key secret, should never be saved or transmitted plaintext.
+  1. `my-node-ID.crypto`: Identification private key, when using default implementation of Cryptokey. Key secret, should never be saved or transmitted plaintext.
+
+Alternative implementations of Ratchet and Cryptokey enable secrets to be managed by specialized hardware (e.g. HSMs).
+
+It is also possible to use `my-node-ID.config` to manage all configuration directives, including those that control Kafka, using the load_value/store_value directives (see [KafkaCryptoStore](https://github.com/tmcqueen-materials/kafkacrypto-java/blob/master/src/main/java/org/kafkacrypto/KafkaCryptStore.java)).
