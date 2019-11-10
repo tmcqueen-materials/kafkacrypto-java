@@ -50,7 +50,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     public void uncaughtException(Thread t, Throwable e)
     {
       e.printStackTrace();
-      System.out.println("Management thread died! Exiting.");
+      System.err.println("Management thread died! Exiting.");
       // TODO: call kafkaconsumer/producer close?
       System.exit(1);
     }
@@ -131,13 +131,17 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     ConsumerRecords<byte[],byte[]> msgs;
     Duration mgmt_poll_interval = Duration.ofMillis(Long.parseLong(this._config.getProperty("MGMT_POLL_INTERVAL")));
     while (this._running) {
+     this._logger.debug("At beginning of management loop");
      try {
       if (this._kc.assignment().size() > 0) {
+        this._logger.debug("Polling");
         msgs = this._kc.poll(mgmt_poll_interval);
       } else {
+        this._logger.debug("No assignments, so no poll");
         msgs = ConsumerRecords.empty();
         Thread.sleep(mgmt_poll_interval.toMillis());
       }
+      this._logger.debug("Got {} messages", msgs.count());
       for (ConsumerRecord<byte[],byte[]> msg : msgs) {
         this._lock.lock();
         try {
@@ -187,18 +191,20 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
               if (cc != null)
                 this._cryptostore.store_value(jasodium.crypto_hash_sha256(cc.pk),"denylist",msgpack.packb(cc));
             } else {
-              System.out.println("Help! I'm lost.");
+              this._logger.warn("Help! I'm lost. Unknown message received on topic={}", msg.topic());
             }
           }
         } catch (Throwable e) {
-          e.printStackTrace();
+          this._logger.info("Exception during message processin", e);
         } finally {
           this._lock.unlock();
         }
       }
 
+      this._logger.debug("Flushing producer");
       this._kp.flush();
 
+      this._logger.debug("Updating assignment");
       this._lock.lock();
       try {
         if (this._tps_updated) {
@@ -209,6 +215,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
         this._lock.unlock();
       }
 
+      this._logger.debug("(Re)subscribing and updating assignments accordingly");
       this._lock.lock();
       try {
         for (String root : this._cgens.keySet()) {
@@ -224,7 +231,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
               if (this._cgens.get(root).get(keyidx).resubNeeded(Double.parseDouble(this._config.getProperty("CRYPTO_SUB_INTERVAL"))))
                 needed.add(this._cgens.get(root).get(keyidx).keyIndex);
             } catch (Throwable e) {
-              e.printStackTrace();
+              this._logger.warn("Exception determining new subscriptions", e);
             }
           if (needed.size() > 0) {
             byte[] needmsg = msgpack.packb(needed);
@@ -237,13 +244,15 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
           }
         }
       } catch (Throwable e) {
-        e.printStackTrace();
+        this._logger.info("Exception during preparing new subscriptions", e);
       } finally {
         this._lock.unlock();
       }
 
+      this._logger.debug("Flushing producer(2)");
       this._kp.flush();
 
+      this._logger.debug("Checking ratchet");
       this._lock.lock();
       try {
         if (this._last_time + Double.parseDouble(this._config.getProperty("CRYPTO_RATCHET_INTERVAL")) < Utils.currentTime()) {
@@ -252,11 +261,12 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
           this._cur_pgens.clear();
         }
       } catch (Throwable e) {
-        e.printStackTrace();
+        this._logger.warn("Exception incrementing ratchet", e);
       } finally {
         this._lock.unlock();
       }
 
+      this._logger.debug("Updating assignments and clearing old keys");
       this._lock.lock();
       try {
         if (this._pgens_updated) {
@@ -280,7 +290,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
           this._pgens_updated = false;
         }
       } catch (Throwable e) {
-        e.printStackTrace();
+        this._logger.warn("Exception writing oldkeys", e);
       } finally {
         this._lock.unlock();
       }
@@ -328,12 +338,8 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
         byte[][] kn = gen.generate();
         msg.msg = jasodium.crypto_secretbox(data,kn[1],kn[0]);
         rv = msg.toWire();
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
-      } catch (KafkaCryptoException kce) {
-        kce.printStackTrace();
-      } catch (KafkaCryptoInternalError kcie) {
-        kcie.printStackTrace();
+      } catch (Throwable e) {
+        this._parent._logger.warn("Exception during serialization", e);
       } finally {
         this._parent._lock.unlock();
       }
@@ -368,15 +374,19 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     public KafkaCryptoMessage deserialize(String topic, byte[] bytes_)
     {
       String root = this._parent.get_root(topic);
-      KafkaCryptoMessage msg = KafkaCryptoMessage.fromWire(bytes_);
-      if (msg == null) return null;
-      if (KafkaPlainWireMessage.class.isAssignableFrom(msg.getClass()))
-        return msg;
-      if (KafkaCryptoWireMessage.class.isAssignableFrom(msg.getClass())) {
-        KafkaCryptoWireMessage msg2 = (KafkaCryptoWireMessage)msg;
-        msg2.root = root;
-        msg2.deser = this;
-        return this.decrypt(msg2);
+      try {
+        KafkaCryptoMessage msg = KafkaCryptoMessage.fromWire(bytes_);
+        if (msg == null) return null;
+        if (KafkaPlainWireMessage.class.isAssignableFrom(msg.getClass()))
+          return msg;
+        if (KafkaCryptoWireMessage.class.isAssignableFrom(msg.getClass())) {
+          KafkaCryptoWireMessage msg2 = (KafkaCryptoWireMessage)msg;
+          msg2.root = root;
+          msg2.deser = this;
+          return this.decrypt(msg2);
+        }
+      } catch (Throwable e) {
+        this._parent._logger.warn("Exception during deserialization", e);
       }
       return null;
     }
@@ -406,14 +416,10 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
         } finally {
           this._parent._lock.unlock();
         }
-      } catch (MessageTypeCastException mtce) {
-        mtce.printStackTrace();
-      } catch (KafkaCryptoException kce) {
-        kce.printStackTrace();
-      } catch (KafkaCryptoInternalError kcie) {
-        kcie.printStackTrace();
       } catch (InterruptedException ie) {
         throw new KafkaCryptoInternalError("Interrupted!", ie);
+      } catch (Throwable e) {
+        this._parent._logger.warn("Exception during deserialization decryption", e);
       }
       return msg;
     }

@@ -12,6 +12,9 @@ import org.kafkacrypto.msgs.ByteString;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -24,6 +27,7 @@ import java.io.IOException;
 
 class KafkaCryptoBase
 {
+  protected Logger _logger;
   protected String _nodeID;
   protected CryptoStore _cryptostore;
   protected CryptoKey _cryptokey;
@@ -35,6 +39,7 @@ class KafkaCryptoBase
 
   public KafkaCryptoBase(String nodeID, KafkaProducer<byte[],byte[]> kp, KafkaConsumer<byte[],byte[]> kc, Object config, Object cryptokey) throws KafkaCryptoException, IOException
   {
+    this._logger = LoggerFactory.getLogger("kafkacrypto-java");
     if ((nodeID==null || nodeID.length() < 1) && config==null)
       throw new KafkaCryptoBaseException("At least one of Node ID and Config file must be specified.");
     if (config == null)
@@ -107,6 +112,7 @@ class KafkaCryptoBase
     this._config.setProperty("DESER_INITIAL_WAIT_INTERVALS", "10");
     for (String e : this._config.stringPropertyNames()) {
       ByteString r = this._cryptostore.load_value(e,null,(ByteString)null);
+      this._logger.info("Loading config: {},{},{}",e,this._config.getProperty(e),r);
       if (r != null)
         this._config.setProperty(e, new String(r.getBytes()));
     }

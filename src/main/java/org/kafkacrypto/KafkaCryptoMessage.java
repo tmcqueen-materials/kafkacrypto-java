@@ -5,10 +5,14 @@ import org.kafkacrypto.msgs.KafkaPlainWireMessage;
 
 import org.kafkacrypto.exceptions.KafkaCryptoMessageException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 public interface KafkaCryptoMessage
 {
+  static final Logger _logger = LoggerFactory.getLogger("kafkacrypto-java.kafkacryptomessage");
   public boolean isCleartext();
   public byte[] getMessage() throws KafkaCryptoMessageException;
   public byte[] toWire() throws IOException;
@@ -23,6 +27,7 @@ public interface KafkaCryptoMessage
       if (msgs[0][0] == 0)
         return new KafkaPlainWireMessage().unpackb(msgs[1]);
     } catch (IOException ioe) {
+      KafkaCryptoMessage._logger.info("Error unpacking message", ioe);
     }
     return null;
   }

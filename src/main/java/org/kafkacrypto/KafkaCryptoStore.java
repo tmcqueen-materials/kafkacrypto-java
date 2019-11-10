@@ -4,6 +4,9 @@ import org.kafkacrypto.CryptoStore;
 import org.kafkacrypto.msgs.ByteString;
 import org.kafkacrypto.exceptions.KafkaCryptoException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
@@ -14,6 +17,15 @@ public class KafkaCryptoStore extends CryptoStore
   public KafkaCryptoStore(String file) throws KafkaCryptoException
   {
     super(file);
+    long log_level = this.load_value("log_level",null,30L);
+    if (log_level <= 50L && log_level >= 40L)
+      System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "error");
+    else if (log_level >= 30L)
+      System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "warning");
+    else if (log_level >= 20L)
+      System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "info");
+    else if (log_level >= 10L)
+      System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
   }
 
   public Properties get_kafka_config(String use, String... extra)

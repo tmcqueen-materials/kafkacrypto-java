@@ -9,6 +9,9 @@ import org.kafkacrypto.msgs.ByteString;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 import java.util.Map;
@@ -18,6 +21,7 @@ import java.util.Base64;
 
 class CryptoStore
 {
+  protected Logger _logger;
   private Lock lock;
   private Lock keylock;
   private CryptoKey cryptokey;
@@ -31,6 +35,7 @@ class CryptoStore
   }
   public CryptoStore(String file, String nodeID) throws KafkaCryptoException
   {
+    this._logger = LoggerFactory.getLogger("kafkacrypto-java.cryptostore");
     try {
       this.file = new AtomicFile(file);
       this.config = CryptoStore.parseFile(this.file);
@@ -98,6 +103,7 @@ class CryptoStore
   public ByteString load_value(ByteString name, ByteString section, ByteString def)
   {
     ByteString rv = def;
+    this._logger.debug("Attempting to load name={} from section={}, default={}", name, section, def);
     this.lock.lock();
     try {
       if (section==null || section.length() < 1)
@@ -111,6 +117,7 @@ class CryptoStore
     } finally {
       this.lock.unlock();
     }
+    this._logger.debug("Loaded {} for name={}, section={}", rv, name, section);
     return rv;
   }
 
@@ -122,6 +129,7 @@ class CryptoStore
   public Map<ByteString,ByteString> load_section(ByteString section, boolean defaults)
   {
     Map<ByteString,ByteString> rv = new LinkedHashMap<ByteString,ByteString>();
+    this._logger.debug("Attempting to load section={} with defaults={}", section, defaults);
     this.lock.lock();
     try {
       if (section==null || section.length() < 1)
@@ -136,12 +144,14 @@ class CryptoStore
       if (defaults) {
         sect = this.config.get(new ByteString("DEFAULT"));
         for (ByteString k : sect.keySet())
-          if (!rv.containsKey(k))
+          if (!rv.containsKey(k)) {
+            this._logger.debug("Adding default name={}, value={}", k, sect.get(k));
             rv.put(k,sect.get(k));
+          } else if (rv.get(k) == null || rv.get(k).length() == 0) {
+            this._logger.debug("Removing name={}", k);
+            rv.remove(k);
+          }
       }
-//      for (ByteString k : rv.keySet())
-//        if (rv.get(k) == null || rv.get(k).length() == 0)
-//          rv.remove(k);
     } finally {
       this.lock.unlock();
     }
@@ -183,6 +193,7 @@ class CryptoStore
   public void store_values(ByteString section, Map<ByteString,ByteString> namevals) throws KafkaCryptoStoreException
   {
     this.lock.lock();
+    this._logger.debug("Attempting to store values for section={}", section);
     try {
       if (section==null || section.length() < 1)
         section = new ByteString(this.nodeID);
@@ -192,6 +203,7 @@ class CryptoStore
         this.config.put(section, new LinkedHashMap<ByteString,ByteString>());
       Map<ByteString,ByteString> sect = this.config.get(section);
       for (ByteString k : namevals.keySet()) {
+        this._logger.debug("  Storing name={}, value={}", k, namevals.get(k));
         if (namevals.get(k) == null)
           sect.remove(k);
         else
@@ -223,10 +235,12 @@ class CryptoStore
   public ByteString load_opaque_value(ByteString name, ByteString section, ByteString def)
   {
     ByteString rv;
+    this._logger.debug("Loading opaque value for name={}, section={}", name, section);
     this.keylock.lock();
     try {
       rv = this.load_value(name, section, null);
       if (rv != null) {
+        this._logger.debug("  Decrypting opaque value.");
         rv = new ByteString(this.cryptokey.unwrap_opaque(rv.getBytes()));
         if (rv.length() < 1)
           rv = null;
@@ -236,6 +250,7 @@ class CryptoStore
     } finally {
       this.keylock.unlock();
     }
+    this._logger.debug("Loaded opaque value for name={}, section={}", name, section);
     return rv;
   }
 
@@ -246,10 +261,12 @@ class CryptoStore
 
   public void store_opaque_value(ByteString name, ByteString value, ByteString section) throws KafkaCryptoException
   {
+    this._logger.debug("Storing opaque value for name={}, section={}", name, section);
     this.keylock.lock();
     try {
       value = new ByteString(this.cryptokey.wrap_opaque(value.getBytes()));
       this.store_value(name, value, section);
+      this._logger.debug("  Successfully stored opaque value for name={}, section={}", name, section);
     } finally {
       this.keylock.unlock();
     }

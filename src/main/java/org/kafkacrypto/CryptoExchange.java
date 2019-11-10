@@ -11,13 +11,19 @@ import org.kafkacrypto.msgs.ChainCert;
 import org.kafkacrypto.msgs.TopicsPoison;
 import org.kafkacrypto.msgs.UsagesPoison;
 import org.kafkacrypto.msgs.msgpack;
+import org.kafkacrypto.exceptions.KafkaCryptoExchangeException;
 import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
 import org.msgpack.value.Value;
 import org.msgpack.value.Variable;
 import org.msgpack.core.MessageTypeCastException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Arrays;
 
 import org.kafkacrypto.types.ByteHashMap;
 
@@ -25,6 +31,7 @@ import java.io.IOException;
 
 public class CryptoExchange
 {
+  protected Logger _logger;
   private int __maxage = 86400;
   private int __randombytes = 32;
   private CryptoKey __cryptokey;
@@ -46,6 +53,7 @@ public class CryptoExchange
 
   public CryptoExchange(SignedChain chain, CryptoKey cryptokey, List<ChainCert> allowlist, List<ChainCert> denylist, int maxage, int randombytes)
   {
+    this._logger = LoggerFactory.getLogger("kafkacrypto-java.cryptoexchange");
     if (maxage > 0)
       this.__maxage = maxage;
     if (randombytes > this.__randombytes)
@@ -97,12 +105,12 @@ public class CryptoExchange
         rv.append(msg);
         return msgpack.packb(rv);
       } catch (Throwable t) {
-        t.printStackTrace();
+        this._logger.info("Could not build reply chain", t);
       } finally {
         this.__spk_lock.unlock();
       }
     } catch (Throwable t) {
-      t.printStackTrace();
+      this._logger.info("Error replying to encrypt_keys message", t);
     } finally {
       this.__allowdenylist_lock.unlock();
     }
@@ -132,11 +140,11 @@ public class CryptoExchange
           this.__cryptokey.use_epk(topic, "decrypt_keys", new byte[0][], true);
           return rv;
         } catch (Throwable t) {
-          t.printStackTrace();
+          this._logger.debug("Failure to decrypt keys", t);
         }
       }
     } catch (Throwable t) {
-      t.printStackTrace();
+      this._logger.info("Unable to interpret decrypt_keys message", t);
     } finally {
       this.__allowdenylist_lock.unlock();
     }
@@ -169,7 +177,7 @@ public class CryptoExchange
   {
     this.__allowdenylist_lock.lock();
     try {
-      ChainCert pk = allow.process_chain(null, "key-denylist", this.__allowlist, this.__denylist);
+      ChainCert pk = allow.process_chain(null, "key-allowlist", this.__allowlist, this.__denylist);
       ChainCert apk = new ChainCert().unpackb(pk.getExtra(0).asRawValue().asByteArray());
       if (!pk.pk.equals(apk.pk)) throw new KafkaCryptoInternalError("Mismatch in keys for allowlist.");
       if (!this.__allowlist.contains(apk)) {
@@ -177,8 +185,11 @@ public class CryptoExchange
         return apk;
       }
     } catch (NullPointerException npe) {
+      this._logger.info("add_allowlist error", npe);
     } catch (KafkaCryptoInternalError kcie) {
+      this._logger.warn("add_allowlist error", kcie);
     } catch (IOException ioe) {
+      this._logger.info("add_allowlist error", ioe);
     } finally {
       this.__allowdenylist_lock.unlock();
     }
@@ -197,8 +208,11 @@ public class CryptoExchange
         return apk;
       }
     } catch (NullPointerException npe) {
+      this._logger.info("add_denylist error", npe);
     } catch (KafkaCryptoInternalError kcie) {
+      this._logger.warn("add_denylist error", kcie);
     } catch (IOException ioe) {
+      this._logger.info("add_denylist error", ioe);
     } finally {
       this.__allowdenylist_lock.unlock();
     }
@@ -217,14 +231,23 @@ public class CryptoExchange
       ChainCert new_spk = chain.process_chain(null, null, this.__allowlist, this.__denylist);
       this.__spk_lock.lock();
       try {
+        if (!Arrays.equals(this.__cryptokey.get_spk(), new_spk.pk)) {
+          this._logger.warn("Key mismatch: {} vs {}", this.__cryptokey.get_spk(), new_spk.pk);
+          throw new KafkaCryptoExchangeException("New chain does not match current signing public key!");
+        }
         if (this.__spk == null || new_spk.max_age > this.__spk.max_age) {
           this.__spk_chain = chain;
           this.__spk = new_spk;
           return chain;
+        } else {
+          this._logger.warn("Non-superior chain: {} vs {}", this.__spk.max_age, new_spk.max_age);
+          throw new KafkaCryptoExchangeException("New chain has sooner expiry time than current chain!");
         }
       } finally {
         this.__spk_lock.unlock();
       }
+    } catch (KafkaCryptoExchangeException kcee) {
+      this._logger.warn("__update_spk_chain error", kcee);
     } finally {
       this.__allowdenylist_lock.unlock();
     }

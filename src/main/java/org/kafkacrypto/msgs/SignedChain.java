@@ -9,6 +9,9 @@ import org.kafkacrypto.jasodium;
 
 import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.msgpack.core.MessagePacker;
 import java.util.List;
 import java.util.ArrayList;
@@ -18,21 +21,23 @@ import java.io.IOException;
 
 public class SignedChain implements Msgpacker<SignedChain>
 {
+  static final Logger _logger = LoggerFactory.getLogger("kafkacrypto-java.signedchain");
   public ArrayList<byte[]> chain;
 
   public SignedChain()
   {
-    chain = new ArrayList<byte[]>();
+    this.chain = new ArrayList<byte[]>();
   }
 
+  @SuppressWarnings("unchecked")
   public SignedChain(SignedChain src)
   {
-    chain = (ArrayList<byte[]>)(src.chain.clone());
+    this.chain = (ArrayList<byte[]>)(src.chain.clone());
   }
 
   public SignedChain unpackb(List<Value> src) throws IOException
   {
-    chain = new ArrayList<byte[]>();
+    this.chain = new ArrayList<byte[]>();
     for (int i = 0; i < src.size(); i++) {
       this.chain.add(src.get(i).asRawValue().asByteArray());
     }
@@ -61,7 +66,7 @@ public class SignedChain implements Msgpacker<SignedChain>
 
   public void append(byte[] cert)
   {
-    chain.add(cert);
+    this.chain.add(cert);
   }
 
   public ChainCert process_chain(String topic, String usage, List<ChainCert> allowed, List<ChainCert> denied)
@@ -101,9 +106,9 @@ public class SignedChain implements Msgpacker<SignedChain>
           throw new KafkaCryptoInternalError("Chain exceeds allowed pathlen.");
         return lpk;
       } catch (KafkaCryptoInternalError kcie) {
-        kcie.printStackTrace();
+        SignedChain._logger.info("Issues encountered with chain", kcie);
       } catch (IOException ioe) {
-        ioe.printStackTrace();
+        SignedChain._logger.info("Issues encountered with chain", ioe);
       }
     }
     //TODO: Add self-signed denylisting.

@@ -10,10 +10,14 @@ import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.Msgpacker;
 import org.kafkacrypto.exceptions.KafkaCryptoException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 public class EncryptionKey implements Msgpacker<EncryptionKey>
 {
+  static final Logger _logger = LoggerFactory.getLogger("kafkacrypto-java.encryptionkey");
   public String root = null;
   public byte[] keyIndex = null;
   public byte[] key = null;
@@ -65,7 +69,7 @@ public class EncryptionKey implements Msgpacker<EncryptionKey>
       this.birth = src.get(3).asNumberValue().toDouble();
       this.acquired = true;
       this.creation = Utils.currentTime();
-      System.out.println("Attempting load of root=" + this.root + ", ki=" + Utils.bytesToHex(this.keyIndex) + ", b=" + String.format("%.2f", this.birth));
+      EncryptionKey._logger.info("Attempting load of root={}, ki={}, b={}", this.root, Utils.bytesToHex(this.keyIndex), String.format("%.2f", this.birth));
       return this;
     }
     return null;
