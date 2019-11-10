@@ -37,6 +37,9 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <version>1.6</version>
+            <configuration>
+              <keyname>E9BB2CC7DDF340CBEB3BE0B44080B385EE38D0C7</keyname>
+            </configuration>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
