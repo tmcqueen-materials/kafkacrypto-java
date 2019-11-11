@@ -50,13 +50,13 @@ public class PathlenPoison implements Msgpacker<PathlenPoison>, CertPoison
     return false;
   }
 
-  public CertPoison intersect_poison(CertPoison c2)
+  public CertPoison intersect_poison(CertPoison c2, boolean same_pk)
   {
     if (c2 == null) return this;
     PathlenPoison c2c = (PathlenPoison)c2;
     PathlenPoison rv = new PathlenPoison();
-    if (this.max_pathlen-1 < (c2c).max_pathlen) rv.max_pathlen = this.max_pathlen-1;
-    rv.max_pathlen = c2c.max_pathlen;
+    if (this.max_pathlen-1 < (c2c).max_pathlen && !same_pk) rv.max_pathlen = this.max_pathlen-1;
+    else rv.max_pathlen = c2c.max_pathlen;
     return rv;
   }
 }

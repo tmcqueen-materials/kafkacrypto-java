@@ -6,6 +6,7 @@ import org.kafkacrypto.msgs.CryptoKeyFileFormat;
 import org.kafkacrypto.exceptions.KafkaCryptoException;
 import org.kafkacrypto.exceptions.KafkaCryptoKeyException;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.nio.file.Files;
 
@@ -13,6 +14,9 @@ import java.io.IOException;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -26,6 +30,8 @@ public class CryptoKey
 
   public CryptoKey(String file) throws KafkaCryptoException
   {
+    if (!(new File(file).exists()))
+      this.__init_cryptokey(file);
     try {
       CryptoKeyFileFormat ckff = new CryptoKeyFileFormat().unpackb(Files.readAllBytes(Paths.get(file)));
       this.__ssk = ckff.ssk;
@@ -92,5 +98,22 @@ public class CryptoKey
   public byte[] unwrap_opaque(byte[] opaque)
   {
     return jasodium.crypto_secretbox_open_auto(opaque,this.__ek);
+  }
+
+  private void __init_cryptokey(String file)
+  {
+    Logger _logger = LoggerFactory.getLogger("kafkacrypto-java.CryptoKey");
+    _logger.warn("Initializing new CryptoKey file {}", file);
+    byte[][] pksk = jasodium.crypto_sign_keypair();
+    CryptoKeyFileFormat ckff = new CryptoKeyFileFormat();
+    _logger.warn("  Public Key: {}", Utils.bytesToHex(pksk[0]));
+    ckff.ek = jasodium.randombytes(jasodium.CRYPTO_SECRETBOX_KEYBYTES);
+    ckff.ssk = pksk[1];
+    try {
+      Files.write(Paths.get(file), msgpack.packb(ckff));
+    } catch (IOException ioe) {
+      _logger.warn("  Error writing file.",ioe);
+    }
+    _logger.warn("  CryptoKey Initialized. Provisioning required for successful operation.");
   }
 }

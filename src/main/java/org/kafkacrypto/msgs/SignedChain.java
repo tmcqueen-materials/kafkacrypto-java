@@ -89,9 +89,9 @@ public class SignedChain implements Msgpacker<SignedChain>
             denylisted = true;
           } else if (ChainCert.key_in_list(lpk, allowed) != null) {
             denylisted = false;
-            lpk = ChainCert.intersect_certs(lpk, ChainCert.key_in_list(lpk, allowed));
+            lpk = ChainCert.intersect_certs(lpk, ChainCert.key_in_list(lpk, allowed), true);
           }
-          lpk = ChainCert.intersect_certs(lpk, npk);
+          lpk = ChainCert.intersect_certs(lpk, npk, false);
         }
         if (ChainCert.key_in_list(lpk, allowed) != null)
           denylisted = false;

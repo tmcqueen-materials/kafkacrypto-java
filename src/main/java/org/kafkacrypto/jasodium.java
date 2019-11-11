@@ -68,6 +68,21 @@ public class jasodium
     return rv;
   }
 
+  public static byte[][] crypto_sign_seed_keypair(byte[] seed)
+  {
+    byte[][] rv = new byte[2][];
+    rv[0] = new byte[kalium.CRYPTO_SIGN_ED25519_PUBLICKEYBYTES];
+    rv[1] = new byte[kalium.CRYPTO_SIGN_ED25519_SECRETKEYBYTES];
+    jasodium._check(kalium.crypto_sign_ed25519_seed_keypair(rv[0], rv[1], seed));
+    return rv;
+  }
+
+  public static byte[][] crypto_sign_keypair()
+  {
+    return jasodium.crypto_sign_seed_keypair(jasodium.randombytes(jasodium.CRYPTO_SIGN_SEED_BYTES));
+  }
+
+  private static final int CRYPTO_SIGN_SEED_BYTES = 32;
   private static final int CRYPTO_SIGN_SIGNATURE_BYTES = 64;
 
   public static final int CRYPTO_SECRETBOX_KEYBYTES = 32;
@@ -79,6 +94,13 @@ public class jasodium
   {
     byte[] nonce = jasodium.randombytes(kalium.CRYPTO_SECRETBOX_XSALSA20POLY1305_NONCEBYTES);
     return Utils.concatArrays(nonce, jasodium.crypto_secretbox(message, nonce, key));
+  }
+
+  public static byte[] crypto_box_seal(byte[] message, byte[] pk)
+  {
+    byte[] rv = new byte[kalium.CRYPTO_BOX_SEALBYTES+message.length];
+    jasodium._check(kalium.crypto_box_seal(rv, message, message.length, pk));
+    return rv;
   }
 
   public static byte[] crypto_secretbox(byte[] message, byte[] nonce, byte[] key)

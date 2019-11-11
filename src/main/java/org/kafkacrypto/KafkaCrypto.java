@@ -81,13 +81,21 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
   {
     super(nodeID, kp, kc, config, cryptokey);
 
-    if (seed != null && Ratchet.class.isAssignableFrom(seed.getClass())) {
-      this._seed = (Ratchet)seed;
-    } else if (seed != null) {
-      this._seed = new Ratchet((String)seed);
-    } else {
-      this._seed = new Ratchet(this._nodeID + ".seed");
+    if (seed == null) {
+      seed = (String)this._cryptostore.load_value("ratchet", null, (String)null);
+      if (seed != null && ((String)seed).startsWith("file#")) {
+        seed = ((String)seed).substring(5);
+      } else {
+        seed = nodeID + ".seed";
+        this._cryptostore.store_value("ratchet", null, "file#" + (String)seed);
+      }
     }
+    if (Ratchet.class.isAssignableFrom(seed.getClass())) {
+      this._seed = (Ratchet)seed;
+    } else {
+      this._seed = new Ratchet((String)seed);
+    }
+
     this._last_time = Utils.currentTime();
 
     this._tps = new HashMap<TopicPartition,OffsetAndMetadata>();
@@ -238,6 +246,10 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
             byte[] needrequest = this._cryptoexchange.signed_epk(root,null);
             if (needmsg != null && needrequest != null) {
               this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_SUBS"), needmsg, needrequest));
+              if (!this._cryptoexchange.valid_spk_chain()) {
+                // If using default/temp ROT, send directly as well
+                this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_REQS"), needmsg, needrequest));
+              }
               for (byte[] ki : needed)
                 this._cgens.get(root).get(ki).resub(Utils.currentTime());
             }

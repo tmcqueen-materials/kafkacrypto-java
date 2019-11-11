@@ -16,7 +16,12 @@ public class KafkaCryptoStore extends CryptoStore
 {
   public KafkaCryptoStore(String file) throws KafkaCryptoException
   {
-    super(file);
+    this(file,null);
+  }
+
+  public KafkaCryptoStore(String file, String nodeID) throws KafkaCryptoException
+  {
+    super(file, nodeID);
     long log_level = this.load_value("log_level",null,30L);
     if (log_level <= 50L && log_level >= 40L)
       System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "error");

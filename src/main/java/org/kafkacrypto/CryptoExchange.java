@@ -10,6 +10,7 @@ import org.kafkacrypto.msgs.SignedChain;
 import org.kafkacrypto.msgs.ChainCert;
 import org.kafkacrypto.msgs.TopicsPoison;
 import org.kafkacrypto.msgs.UsagesPoison;
+import org.kafkacrypto.msgs.PathlenPoison;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.exceptions.KafkaCryptoExchangeException;
 import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
@@ -102,6 +103,21 @@ public class CryptoExchange
       this.__spk_lock.lock();
       try {
         SignedChain rv = new SignedChain(this.__spk_chain);
+        if (rv.chain.size() == 0) {
+          ChainCert tempcc = new ChainCert(), tempcc2 = new ChainCert();
+          tempcc.max_age = Utils.currentTime() + this.__maxage;
+          tempcc.poisons.add(new TopicsPoison(topic));
+          tempcc.poisons.add(new UsagesPoison("key-encrypt"));
+          tempcc.poisons.add(new PathlenPoison(1));
+          tempcc.pk = this.__cryptokey.get_spk();
+          rv.append(jasodium.crypto_sign(msgpack.packb(tempcc), jasodium.crypto_sign_seed_keypair(Utils.hexToBytes("4c194f7de97c67626cc43fbdaf93dffbc4735352b37370072697d44254e1bc6c"))[1]));
+          SignedChain provision = new SignedChain();
+          tempcc2.max_age = 0;
+          tempcc2.pk = this.__cryptokey.get_spk();
+          provision.append(msgpack.packb(tempcc2));
+          provision.append(this.__cryptokey.sign_spk(msgpack.packb(tempcc)));
+          this._logger.warn("Current signing chain is empty. Use {} to provision access and then remove temporary root of trust from allowedlist.", Utils.bytesToHex(msgpack.packb(provision)));
+        }
         rv.append(msg);
         return msgpack.packb(rv);
       } catch (Throwable t) {
@@ -166,6 +182,21 @@ public class CryptoExchange
     this.__spk_lock.lock();
     try {
       SignedChain rv = new SignedChain(this.__spk_chain);
+      if (rv.chain.size() == 0) {
+        ChainCert tempcc = new ChainCert(), tempcc2 = new ChainCert();
+        tempcc.max_age = Utils.currentTime() + this.__maxage;
+        tempcc.poisons.add(new TopicsPoison(topic));
+        tempcc.poisons.add(new UsagesPoison("key-encrypt-request","key-encrypt-subscribe"));
+        tempcc.poisons.add(new PathlenPoison(1));
+        tempcc.pk = this.__cryptokey.get_spk();
+        rv.append(jasodium.crypto_sign(msgpack.packb(tempcc), jasodium.crypto_sign_seed_keypair(Utils.hexToBytes("4c194f7de97c67626cc43fbdaf93dffbc4735352b37370072697d44254e1bc6c"))[1]));
+        SignedChain provision = new SignedChain();
+       	tempcc2.max_age = 0;
+        tempcc2.pk = this.__cryptokey.get_spk();
+        provision.append(msgpack.packb(tempcc2));
+        provision.append(this.__cryptokey.sign_spk(msgpack.packb(tempcc)));
+        this._logger.warn("Current signing chain is empty. Use {} to provision access and then remove temporary root of trust from allowedlist.", Utils.bytesToHex(msgpack.packb(provision)));
+      }
       rv.append(msg);
       return msgpack.packb(rv);
     } finally {
@@ -219,6 +250,18 @@ public class CryptoExchange
     return null;
   }
 
+  public boolean valid_spk_chain()
+  {
+    this.__spk_lock.lock();
+    try {
+      if (this.__spk_chain.chain.size() > 0)
+        return true;
+      return false;
+    } finally {
+      this.__spk_lock.unlock();
+    }
+  }
+
   public SignedChain replace_spk_chain(SignedChain newchain)
   {
     return this.__update_spk_chain(newchain);
@@ -226,9 +269,13 @@ public class CryptoExchange
 
   private SignedChain __update_spk_chain(SignedChain chain)
   {
+    if (chain == null || chain.chain.size() < 1)
+      return null;
     this.__allowdenylist_lock.lock();
     try {
       ChainCert new_spk = chain.process_chain(null, null, this.__allowlist, this.__denylist);
+      if (new_spk == null)
+        return null;
       this.__spk_lock.lock();
       try {
         if (!Arrays.equals(this.__cryptokey.get_spk(), new_spk.pk)) {
@@ -253,4 +300,5 @@ public class CryptoExchange
     }
     return null;
   }
+
 }

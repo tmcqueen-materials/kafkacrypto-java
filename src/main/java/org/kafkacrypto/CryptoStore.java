@@ -13,6 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -35,10 +38,26 @@ class CryptoStore
   }
   public CryptoStore(String file, String nodeID) throws KafkaCryptoException
   {
+    boolean need_init = false;
     this._logger = LoggerFactory.getLogger("kafkacrypto-java.cryptostore");
+    if (!(new File(file).exists()) && nodeID != null && nodeID.length() > 0) {
+      try {
+        Files.write(Paths.get(file), new byte[0]);
+      } catch (IOException ioe) {
+        this._logger.warn("  Error writing file.",ioe);
+      }
+      need_init = true;
+    }
     try {
       this.file = new AtomicFile(file);
       this.config = CryptoStore.parseFile(this.file);
+      this.config = config;
+      this.lock = new ReentrantLock();
+      this.keylock = new ReentrantLock();
+      if (need_init) {
+        this.nodeID = nodeID;
+        this.__init_cryptostore(nodeID);
+      }
       String nodeIDFile = (this.config.get(new ByteString("DEFAULT")).containsKey(new ByteString("node_id")))
                           ?(this.config.get(new ByteString("DEFAULT")).get(new ByteString("node_id")).toString()):("");
       if (nodeID.length() > 0 && nodeIDFile.length() > 0 && !nodeID.equals(nodeIDFile))
@@ -48,9 +67,6 @@ class CryptoStore
       this.nodeID = (nodeID.length()>0)?(nodeID):(nodeIDFile);
       if (!this.config.containsKey(new ByteString(this.nodeID)))
         this.config.put(new ByteString(this.nodeID),new LinkedHashMap<ByteString,ByteString>());
-      this.config = config;
-      this.lock = new ReentrantLock();
-      this.keylock = new ReentrantLock();
     } catch (IOException ioe) {
       throw new KafkaCryptoStoreException("Could not open or read file!", ioe);
     }
@@ -173,6 +189,10 @@ class CryptoStore
   public void store_value(String name, String section, String value) throws KafkaCryptoStoreException
   {
     this.store_value(new ByteString(name), new ByteString(section), new ByteString(value));
+  }
+  public void store_value(String name, String section, ByteString value) throws KafkaCryptoStoreException
+  {
+    this.store_value(new ByteString(name), new ByteString(section), value);
   }
   public void store_value(String name, String section, byte[] value) throws KafkaCryptoStoreException
   {
@@ -349,5 +369,30 @@ class CryptoStore
     }
     this.file.truncate();
     this.file.flush();
+  }
+
+  public void __init_cryptostore(String nodeID) throws KafkaCryptoStoreException
+  {
+    this._logger.warn("Initializing new CryptoStore nodeID={}", nodeID);
+    this.store_value("node_id", "DEFAULT", nodeID);
+    this.store_value("bootstrap_servers", "kafka", "");
+    this.store_value("security_protocol", "kafka", "SSL");
+    this.store_value("test", "kafka-consumer", "test");
+    this.store_value("test", "kafka-consumer", (ByteString)null);
+    this.store_value("test", "kafka-producer", "test");
+    this.store_value("test", "kafka-producer", (ByteString)null);
+    this._logger.warn("  Including a default/temporary root of trust. Once proper access is provisioned, this root of trust should be removed or distrusted.");
+    this.store_value("temporary", "allowlist", Utils.hexToBytes("9300ab9192a7706174686c656e02da00201a13b0aecdd6751c7dfa43e43284326ad01dbc20a8a00b1566092ab0a542620f"));
+    this.store_value("test", "denylist", "test");
+    this.store_value("test", "denylist", (ByteString)null);
+    this.store_value("test", "crypto", "test");
+    this.store_value("test", "crypto", (ByteString)null);
+    this.store_value("test", "kafka-crypto", "test");
+    this.store_value("test", "kafka-crypto", (ByteString)null);
+    this.store_value("test", "kafka-crypto-consumer", "test");
+    this.store_value("test", "kafka-crypto-consumer", (ByteString)null);
+    this.store_value("test", "kakfa-crypto-producer", "test");
+    this.store_value("test", "kakfa-crypto-producer", (ByteString)null);
+    this._logger.warn("  CryptoStore Initialized.");
   }
 }

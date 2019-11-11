@@ -65,7 +65,7 @@ public class TopicsPoison implements Msgpacker<TopicsPoison>, CertPoison
     return CertPoison.multimatch(match, this.topics);
   }
 
-  public CertPoison intersect_poison(CertPoison c2)
+  public CertPoison intersect_poison(CertPoison c2, boolean same_pk)
   {
     if (c2 == null) return this;
     TopicsPoison c2c = (TopicsPoison)c2;

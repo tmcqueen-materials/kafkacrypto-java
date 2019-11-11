@@ -54,8 +54,12 @@ class KafkaCryptoBase
     this.__configure();
     if (cryptokey == null) {
       cryptokey = this._cryptostore.load_value("cryptokey",null,(String)null);
-      if (((String)cryptokey).startsWith("file#"))
+      if (cryptokey != null && ((String)cryptokey).startsWith("file#")) {
         cryptokey = ((String)cryptokey).substring(5);
+      } else {
+        cryptokey = nodeID + ".crypto";
+        this._cryptostore.store_value("cryptokey", "", (String)cryptokey);
+      }
     }
     if (CryptoKey.class.isAssignableFrom(cryptokey.getClass()))
       this._cryptokey = (CryptoKey)cryptokey;

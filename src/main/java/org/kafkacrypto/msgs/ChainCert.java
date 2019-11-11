@@ -30,6 +30,8 @@ public class ChainCert implements Msgpacker<ChainCert>
 
   public ChainCert unpackb(List<Value> src) throws IOException
   {
+    if (src == null || src.size() < 3)
+      return null;
     this.max_age = src.get(0).asNumberValue().toDouble();
     this.poisons = new CertPoisons().unpackb(src.get(1).asRawValue().asByteArray());
     if (src.get(2).isArrayValue()) {
@@ -133,7 +135,7 @@ public class ChainCert implements Msgpacker<ChainCert>
     return null;
   }
 
-  public static ChainCert intersect_certs(ChainCert c1, ChainCert c2)
+  public static ChainCert intersect_certs(ChainCert c1, ChainCert c2, boolean same_pk)
   {
     ChainCert rv = new ChainCert();
     if (c2.max_age > 0 && (c2.max_age < c1.max_age || c1.max_age == 0))
@@ -142,7 +144,7 @@ public class ChainCert implements Msgpacker<ChainCert>
       rv.max_age = c1.max_age;
     rv.poisons = new CertPoisons();
     for (CertPoison cp : c1.poisons)
-      rv.poisons.add(cp.intersect_poison(c2.get_poison(cp.poisonName())));
+      rv.poisons.add(cp.intersect_poison(c2.get_poison(cp.poisonName()),same_pk));
     for (CertPoison cp : c2.poisons)
       if (c1.get_poison(cp.poisonName()) == null)
         rv.poisons.add(cp);

@@ -65,7 +65,7 @@ public class UsagesPoison implements Msgpacker<UsagesPoison>, CertPoison
     return CertPoison.multimatch(match, this.usages);
   }
 
-  public CertPoison intersect_poison(CertPoison c2)
+  public CertPoison intersect_poison(CertPoison c2, boolean same_pk)
   {
     if (c2 == null) return this;
     UsagesPoison c2c = (UsagesPoison)c2;

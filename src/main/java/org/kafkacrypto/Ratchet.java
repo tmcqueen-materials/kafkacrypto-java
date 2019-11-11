@@ -2,6 +2,7 @@ package org.kafkacrypto;
 
 import org.kafkacrypto.msgs.RatchetFileFormat;
 import org.kafkacrypto.msgs.EncryptionKey;
+import org.kafkacrypto.msgs.msgpack;
 
 import org.kafkacrypto.jasodium;
 import org.kafkacrypto.Utils;
@@ -14,6 +15,13 @@ import java.math.BigInteger;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Ratchet extends KeyGenerator
 {
   private final static byte[] __ctx = {'r','a','t','c','h','e','t',0,0,0,0,0,0,0,0,0};
@@ -22,6 +30,8 @@ public class Ratchet extends KeyGenerator
 
   private static RandomAccessFile open_file(String file) throws KafkaCryptoRatchetException
   {
+    if (!(new File(file).exists()))
+      Ratchet.__init_ratchet(file);
     try {
       return new RandomAccessFile(file, "rws");
     } catch (IOException ioe) {
@@ -97,5 +107,23 @@ public class Ratchet extends KeyGenerator
       rv.keyIndex = this.__keyidx.toByteArray();
     rv.setKey(kn[0]);
     return rv;
+  }
+
+  private static void __init_ratchet(String file)
+  {
+    Logger _logger = LoggerFactory.getLogger("kafkacrypto-java.Ratchet");
+    _logger.warn("Initializing new Ratchet file {}", file);
+    RatchetFileFormat rff = new RatchetFileFormat();
+    rff.secret = jasodium.randombytes(Ratchet.SECRETSIZE);
+    byte[] _ss0_escrow = Utils.hexToBytes("7e301be3922d8166e30be93c9ecc2e18f71400fe9e6407fd744f4a542bcab934");
+    _logger.warn("  Escrow public key: {}", Utils.bytesToHex(_ss0_escrow));
+    _logger.warn("  Escrow value: {}", Utils.bytesToHex(jasodium.crypto_box_seal(rff.secret, _ss0_escrow)));
+    rff.keyidx = BigInteger.valueOf(0);
+    try {
+      Files.write(Paths.get(file), msgpack.packb(rff));
+    } catch (IOException ioe) {
+      _logger.warn("  Error writing file.",ioe);
+    }
+    _logger.warn("  Ratchet Initialized.");    
   }
 }

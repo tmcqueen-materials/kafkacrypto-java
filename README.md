@@ -12,20 +12,25 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.kafkacrypto.KafkaCrypto;
 import org.kafkacrypto.KafkaCryptoMessage;
+import org.kafkacrypto.exceptions.KafkaCryptoException;
 
-String nodeId = 'my-node-ID';
+String nodeId = "my-node-ID";
 
-# setup separate consumer/producers for the crypto key passing messages. DO NOT use these for
-# other messages.
-KafkaConsumer<byte[],byte[]> kcc = new KafkaConsumer(...your server params in normal form...)
-KafkaProducer<byte[],byte[]> kcp = new KafkaProducer(...your server params in normal form...)
-KafkaCrypto kc = new KafkaCrypto(nodeId,kcp,kcc,null)
+// setup separate consumer/producers for the crypto key passing messages. DO NOT use these for
+// other messages.
+KafkaConsumer<byte[],byte[]> kcc = new KafkaConsumer<byte[],byte[]>(...your server params in normal form...);
+KafkaProducer<byte[],byte[]> kcp = new KafkaProducer<byte[],byte[]>(...your server params in normal form...);
+try {
+  KafkaCrypto kc = new KafkaCrypto(nodeId,kcp,kcc,null);
+} catch (KafkaCryptoException kce) {
+  // handle
+}
 
 ... Your code here ...
 
-# Here is how you configure your producer/consumer objects to use the crypto (de)serializers
-KafkaProducer<byte[],byte[]>  producer = KafkaProducer(...,kc.getKeySerializer(), kc.getValueSerializer())
-KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage> consumer = KafkaConsumer(...,kc.getKeyDeserializer(), kc.getValueDeserializer())
+// Here is how you configure your producer/consumer objects to use the crypto (de)serializers
+KafkaProducer<byte[],byte[]>  producer = KafkaProducer<byte[],byte[]>(...,kc.getKeySerializer(), kc.getValueSerializer());
+KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage> consumer = KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage>(...,kc.getKeyDeserializer(), kc.getValueDeserializer());
 
 ... Your code here ...
 ```
@@ -86,4 +91,38 @@ kafkacrypto separates the storage of cryptographic secrets and non-secret config
 
 Alternative implementations of Ratchet and Cryptokey enable secrets to be managed by specialized hardware (e.g. HSMs).
 
-It is also possible to use `my-node-ID.config` to manage all configuration directives, including those that control Kafka, using the load_value/store_value directives (see [KafkaCryptoStore](https://github.com/tmcqueen-materials/kafkacrypto-java/blob/master/src/main/java/org/kafkacrypto/KafkaCryptoStore.java)).
+It is also possible to use `my-node-ID.config` to manage all configuration directives, including those that control Kafka, using the load_value/store_value directives. A sample implementation is:
+```java
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.kafkacrypto.KafkaCrypto;
+import org.kafkacrypto.KafkaCryptoMessage;
+import org.kafkacrypto.KafkaCryptoStore;
+import org.kafkacrypto.exceptions.KafkaCryptoException;
+
+... in main ...
+// May throw KafkaCryptoException, handle accordingly.
+KafkaCryptoStore kcs = KafkaCryptoStore("nodeID.config", "nodeID");
+
+// Setup KafkaCrypto
+KafkaConsumer<byte[],byte[]> kcc = KafkaConsumer<byte[],byte[]>(kcs.get_kafka_config("consumer","crypto"));
+KafkaProducer<byte[],byte[]> kcp = KafkaProducer<byte[],byte[]>(kcs.get_kafka_config("producer","crypto"));
+KafkaCrypto kc = KafkaCrypto("nodeID",kcp,kcc,kcs);
+
+// read program specific values
+// may throw KafkaCryptoException, handle accordingly.
+TYPE value1 = kcs.load_value("value1", "", default1);
+TYPE value2 = kcs.load_value("value2", "", default2);
+
+// Setup Kafka Consumer and Producer
+KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage> consumer = KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage>(kcs.get_kafka_config("consumer"), kc.getKeyDeserializer(), kc.getValueDeserializer());
+KafkaProducer<byte[],byte[]> producer = KafkaProducer<byte[],byte[]>(kcs.get_kafka_config("producer"), kc.getKeySerializer(), kc.getValueSerializer());
+
+
+... your code here ...
+
+// Save new values
+kcs.store_value("value1", "", "value-of-value1");
+kcs.store_value("value2", "", "value-of-value2");
+```
+

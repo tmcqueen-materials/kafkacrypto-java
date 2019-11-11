@@ -18,7 +18,7 @@ public interface CertPoison<E>
 
   public boolean multimatch(String match);
 
-  public CertPoison intersect_poison(CertPoison c2);
+  public CertPoison intersect_poison(CertPoison c2, boolean same_pk);
 
   public static CertPoison unpackb(List<Value> src) throws IOException
   {
