@@ -54,7 +54,7 @@ This code is available on Maven Central for use in project. You can include in `
     <dependency>
       <groupId>org.kafkacrypto</groupId>
       <artifactId>kafkacrypto-java</artifactId>
-      <version>0.9.9.1</version> <!-- change to latest version for best performance -->
+      <version>0.9.9.3</version> <!-- change to latest version for best performance -->
     </dependency>
 ```
 
