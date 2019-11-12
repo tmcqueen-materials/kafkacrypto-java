@@ -48,7 +48,7 @@ Available on Github at https://github.com/tmcqueen-materials/kafkacrypto
 
 ## Maven Central
 
-This code is available on (Maven Central)[https://mvnrepository.com/artifact/org.kafkacrypto/kafkacrypto-java] for use in projects. You can include in `pom.xml`
+This code is available on [Maven Central](https://mvnrepository.com/artifact/org.kafkacrypto/kafkacrypto-java) for use in projects. You can include in `pom.xml`
 
 ```xml
     <dependency>
