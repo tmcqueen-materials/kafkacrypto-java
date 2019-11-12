@@ -56,6 +56,7 @@ public class PathlenPoison implements Msgpacker<PathlenPoison>, CertPoison
     PathlenPoison c2c = (PathlenPoison)c2;
     PathlenPoison rv = new PathlenPoison();
     if (this.max_pathlen-1 < (c2c).max_pathlen && !same_pk) rv.max_pathlen = this.max_pathlen-1;
+    else if (this.max_pathlen < (c2c).max_pathlen) rv.max_pathlen = this.max_pathlen;
     else rv.max_pathlen = c2c.max_pathlen;
     return rv;
   }
