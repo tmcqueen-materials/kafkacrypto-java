@@ -96,7 +96,7 @@ public class SignedChain implements Msgpacker<SignedChain>
         if (ChainCert.key_in_list(lpk, allowed) != null)
           denylisted = false;
         if (ChainCert.key_in_list(lpk, denied) != null)
-          denylisted = true
+          denylisted = true;
         if (denylisted) throw new KafkaCryptoInternalError("Chain has denylisted key.");
         if (!lpk.validate_time())
           throw new KafkaCryptoInternalError("Chain is expired!");
