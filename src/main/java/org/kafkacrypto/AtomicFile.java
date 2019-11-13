@@ -27,7 +27,7 @@ class AtomicFile
   private void __prepare_writefile() throws IOException
   {
    if (this.__writefile==null) {
-      Files.copy(Paths.get(this.__file), Paths.get(this.__tmpfile));
+      Files.copy(Paths.get(this.__file), Paths.get(this.__tmpfile), REPLACE_EXISTING);
       this.__writefile = new RandomAccessFile(this.__tmpfile, "rws");
       this.__writefile.seek(this.__readfile.getFilePointer());
     }
