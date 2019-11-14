@@ -339,7 +339,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
       try {
         EncryptionKey ek;
         if (!this._parent._cur_pgens.containsKey(root)) {
-          ek = this._parent._seed.get_key_value_generators(root, this._parent._nodeID);
+          ek = this._parent._seed.get_key_value_generators(root, this._parent._cryptokey.get_spk());
           this._parent._cur_pgens.put(root, ek);
           this._parent._pgens.ensureContains(root);
           this._parent._pgens.get(root).put(ek.keyIndex, ek);

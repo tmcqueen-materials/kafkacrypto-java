@@ -88,7 +88,7 @@ public class Ratchet extends KeyGenerator
     }
   }
 
-  public EncryptionKey get_key_value_generators(String topic, String node) throws KafkaCryptoException
+  public EncryptionKey get_key_value_generators(String topic, byte[] node) throws KafkaCryptoException
   {
     EncryptionKey rv = new EncryptionKey();
     byte[][] hashparts = Utils.splitArray(jasodium.crypto_hash_sha256(topic.getBytes()),this.SALTSIZE);
@@ -96,11 +96,11 @@ public class Ratchet extends KeyGenerator
     rv.root = topic;
     if (node != null) {
       byte[] ki = this.__keyidx.toByteArray();
-      byte[] nki = new byte[16+node.getBytes().length];
+      byte[] nki = new byte[16+node.length];
       for (int i = 0; i < ki.length; i++)
-        nki[i+(16-ki.length)+node.getBytes().length] = ki[i];
-      for (int i = 0; i < node.getBytes().length; i++)
-        nki[i] = node.getBytes()[i];
+        nki[i+(16-ki.length)+node.length] = ki[i];
+      for (int i = 0; i < node.length; i++)
+        nki[i] = node[i];
       ki = jasodium.crypto_generichash(nki, null, 0);
       rv.keyIndex = ki;
     } else
