@@ -155,7 +155,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
         try {
           TopicPartition tp = new TopicPartition(msg.topic(),msg.partition());
           if (!this._tps.containsKey(tp) || this._tps.get(tp).offset() <= msg.offset()) {
-            this._tps.put(tp, new OffsetAndMetadata(msg.offset()));
+            this._tps.put(tp, new OffsetAndMetadata(msg.offset()+1));
             if (msg.topic().endsWith(this._config.getProperty("TOPIC_SUFFIX_REQS"))) {
               String root = msg.topic().substring(0,msg.topic().lastIndexOf(this._config.getProperty("TOPIC_SUFFIX_REQS")));
               List<Value> kreq = msgpack.unpackb(msg.key());
