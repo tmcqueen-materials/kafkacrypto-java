@@ -168,7 +168,7 @@
   <groupId>org.kafkacrypto</groupId>
   <artifactId>kafkacrypto-java</artifactId>
   <packaging>jar</packaging>
-  <version>0.9.9.4-SNAPSHOT</version>
+  <version>0.9.9.5-SNAPSHOT</version>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Java port of kafkacrypto, a lightweight and cross-platform/cross-language encryption library for Apache Kafka.</description>
   <url>https://github.com/tmcqueen-materials/kafkacrypto-java</url>
