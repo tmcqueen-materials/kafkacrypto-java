@@ -184,12 +184,6 @@
       <email>tmcqueen-materials@demoivre.com</email>
     </developer>
   </developers>
-  <repositories>
-    <repository>
-      <id>jcenter</id>
-      <url>https://jcenter.bintray.com/</url>
-    </repository>
-  </repositories>
   <dependencies>
     <dependency>
       <groupId>org.msgpack</groupId>
@@ -211,10 +205,10 @@
       <artifactId>slf4j-api</artifactId>
       <version>1.7.29</version>
     </dependency>
-    <dependency>
+<!--    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <version>1.7.29</version>
-    </dependency>
+    </dependency> -->
   </dependencies>
 </project>
