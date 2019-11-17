@@ -58,7 +58,7 @@ class KafkaCryptoBase
         cryptokey = ((String)cryptokey).substring(5);
       } else {
         cryptokey = nodeID + ".crypto";
-        this._cryptostore.store_value("cryptokey", "", (String)cryptokey);
+        this._cryptostore.store_value("cryptokey", "", "file#" + (String)cryptokey);
       }
     }
     if (CryptoKey.class.isAssignableFrom(cryptokey.getClass()))
@@ -112,7 +112,7 @@ class KafkaCryptoBase
     this._config.setProperty("MGMT_POLL_INTERVAL", "500");
     this._config.setProperty("MGMT_POLL_RECORDS", "8");
     this._config.setProperty("MGMT_SUBSCRIBE_INTERVAL", "300");
-    this._config.setProperty("MGMT_LONG_KEYINDEX", "false");
+    this._config.setProperty("MGMT_LONG_KEYINDEX", "true");
     this._config.setProperty("DESER_INITIAL_WAIT_INTERVALS", "10");
     for (String e : this._config.stringPropertyNames()) {
       ByteString r = this._cryptostore.load_value(e,null,(ByteString)null);

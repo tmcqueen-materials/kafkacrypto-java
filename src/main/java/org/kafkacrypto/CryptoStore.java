@@ -222,7 +222,7 @@ class CryptoStore
     try {
       if (section==null || section.length() < 1)
         section = new ByteString(this.nodeID);
-      else
+      else if (!rawSection)
         section = new ByteString(this.nodeID + "-" + section);
       if (!this.config.containsKey(section))
         this.config.put(section, new LinkedHashMap<ByteString,ByteString>());
@@ -381,7 +381,7 @@ class CryptoStore
     this._logger.warn("Initializing new CryptoStore nodeID={}", nodeID);
     Map<ByteString,ByteString> nvs = new LinkedHashMap<ByteString,ByteString>();
     nvs.put(new ByteString("node_id"), new ByteString(nodeID));
-    this.store_values("DEFAULT",nvs,true);
+    this.store_values(new ByteString("DEFAULT"),nvs,true);
     this.store_value("bootstrap_servers", "kafka", "");
     this.store_value("security_protocol", "kafka", "SSL");
     this.store_value("test", "kafka-consumer", "test");
