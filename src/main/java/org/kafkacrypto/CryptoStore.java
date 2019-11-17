@@ -207,10 +207,15 @@ class CryptoStore
   {
     Map<ByteString,ByteString> nvs = new LinkedHashMap<ByteString,ByteString>();
     nvs.put(name, value);
-    this.store_values(section,nvs);
+    this.store_values(section,nvs,false);
   }
 
   public void store_values(ByteString section, Map<ByteString,ByteString> namevals) throws KafkaCryptoStoreException
+  {
+    this.store_values(section,namevals,false);
+  }
+
+  private void store_values(ByteString section, Map<ByteString,ByteString> namevals, boolean rawSection) throws KafkaCryptoStoreException
   {
     this.lock.lock();
     this._logger.debug("Attempting to store values for section={}", section);
@@ -374,7 +379,9 @@ class CryptoStore
   public void __init_cryptostore(String nodeID) throws KafkaCryptoStoreException
   {
     this._logger.warn("Initializing new CryptoStore nodeID={}", nodeID);
-    this.store_value("node_id", "DEFAULT", nodeID);
+    Map<ByteString,ByteString> nvs = new LinkedHashMap<ByteString,ByteString>();
+    nvs.put(new ByteString("node_id"), new ByteString(nodeID));
+    this.store_values("DEFAULT",nvs,true);
     this.store_value("bootstrap_servers", "kafka", "");
     this.store_value("security_protocol", "kafka", "SSL");
     this.store_value("test", "kafka-consumer", "test");
