@@ -29,8 +29,8 @@ try {
 ... Your code here ...
 
 // Here is how you configure your producer/consumer objects to use the crypto (de)serializers
-KafkaProducer<byte[],byte[]>  producer = KafkaProducer<byte[],byte[]>(...,kc.getKeySerializer(), kc.getValueSerializer());
-KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage> consumer = KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage>(...,kc.getKeyDeserializer(), kc.getValueDeserializer());
+KafkaProducer<byte[],byte[]>  producer = new KafkaProducer<byte[],byte[]>(...,kc.getKeySerializer(), kc.getValueSerializer());
+KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage> consumer = new KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage>(...,kc.getKeyDeserializer(), kc.getValueDeserializer());
 
 ... Your code here ...
 ```
@@ -102,12 +102,12 @@ import org.kafkacrypto.exceptions.KafkaCryptoException;
 
 ... in main ...
 // May throw KafkaCryptoException, handle accordingly.
-KafkaCryptoStore kcs = KafkaCryptoStore("nodeID.config", "nodeID");
+KafkaCryptoStore kcs = new KafkaCryptoStore("nodeID.config", "nodeID");
 
 // Setup KafkaCrypto
-KafkaConsumer<byte[],byte[]> kcc = KafkaConsumer<byte[],byte[]>(kcs.get_kafka_config("consumer","crypto"));
-KafkaProducer<byte[],byte[]> kcp = KafkaProducer<byte[],byte[]>(kcs.get_kafka_config("producer","crypto"));
-KafkaCrypto kc = KafkaCrypto("nodeID",kcp,kcc,kcs);
+KafkaConsumer<byte[],byte[]> kcc = new KafkaConsumer<byte[],byte[]>(kcs.get_kafka_config("consumer","crypto"));
+KafkaProducer<byte[],byte[]> kcp = new KafkaProducer<byte[],byte[]>(kcs.get_kafka_config("producer","crypto"));
+KafkaCrypto kc = new KafkaCrypto("nodeID",kcp,kcc,kcs);
 
 // read program specific values
 // may throw KafkaCryptoException, handle accordingly.
@@ -115,9 +115,8 @@ TYPE value1 = kcs.load_value("value1", "", default1);
 TYPE value2 = kcs.load_value("value2", "", default2);
 
 // Setup Kafka Consumer and Producer
-KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage> consumer = KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage>(kcs.get_kafka_config("consumer"), kc.getKeyDeserializer(), kc.getValueDeserializer());
-KafkaProducer<byte[],byte[]> producer = KafkaProducer<byte[],byte[]>(kcs.get_kafka_config("producer"), kc.getKeySerializer(), kc.getValueSerializer());
-
+KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage> consumer = new KafkaConsumer<KafkaCryptoMessage,KafkaCryptoMessage>(kcs.get_kafka_config("consumer"), kc.getKeyDeserializer(), kc.getValueDeserializer());
+KafkaProducer<byte[],byte[]> producer = new KafkaProducer<byte[],byte[]>(kcs.get_kafka_config("producer"), kc.getKeySerializer(), kc.getValueSerializer());
 
 ... your code here ...
 
