@@ -1,7 +1,7 @@
 # kafkacrypto-java
-Message Layer Encryption for Kafka
+End-to-End (End2End) Message Layer Encryption for Kafka
 
-This is a Java implementation of the encryption layer kafkacrypto.
+This is a Java implementation of the encryption layer [kafkacrypto](https://github.com/tmcqueen-materials/kafkacrypto).
 
 ## Quick Start
 Utilize the kafkacrypto-java library during your build process and package as part of your releases.
@@ -48,7 +48,7 @@ Available on Github at https://github.com/tmcqueen-materials/kafkacrypto
 
 ## Maven Central
 
-This code is available on [Maven Central](https://mvnrepository.com/artifact/org.kafkacrypto/kafkacrypto-java) for use in projects. You can include in `pom.xml`
+This code is available on [Maven Central](https://search.maven.org/artifact/org.kafkacrypto/kafkacrypto-java) for use in projects. You can include in `pom.xml`
 
 ```xml
     <dependency>
@@ -80,6 +80,8 @@ for (ConsumerRecord<KafkaCryptoMessage,KafkaCryptoMessage> msg : consumer) {
     // message value was not decrypted. msg.value().toWire() is the raw (undecrypted) message value
     // It can be discarded, or saved and decryption attempted at a later time
   }
+  // Note that for single messages due to how per-message encryption keys are derived, either both 
+  // key and value will be successfully decrypted, or neither will.
 ```
 The convenience method `.getMessage()` can be used instead to return the message as bytes if successfully decrypted, or to raise a `KafkaCryptoMessageException` if decryption failed.
 
@@ -89,7 +91,7 @@ kafkacrypto separates the storage of cryptographic secrets and non-secret config
   1. `my-node-ID.seed`: Next ratchet seed, when using default implementation of Ratchet. Key secret, should never be saved or transmitted plaintext.
   1. `my-node-ID.crypto`: Identification private key, when using default implementation of Cryptokey. Key secret, should never be saved or transmitted plaintext.
 
-Alternative implementations of Ratchet and Cryptokey enable secrets to be managed by specialized hardware (e.g. HSMs).
+Alternative implementations of Ratchet and Cryptokey enable secrets to be managed by specialized hardware (e.g. TPMs/HSMs).
 
 It is also possible to use `my-node-ID.config` to manage all configuration directives, including those that control Kafka, using the load_value/store_value directives. A sample implementation is:
 ```java
