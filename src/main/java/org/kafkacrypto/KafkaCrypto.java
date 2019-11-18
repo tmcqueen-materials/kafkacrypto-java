@@ -86,7 +86,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
       if (seed != null && ((String)seed).startsWith("file#")) {
         seed = ((String)seed).substring(5);
       } else {
-        seed = nodeID + ".seed";
+        seed = this._nodeID + ".seed";
         this._cryptostore.store_value("ratchet", null, "file#" + (String)seed);
       }
     }

@@ -3,6 +3,7 @@ package org.kafkacrypto;
 import org.kafkacrypto.CryptoStore;
 import org.kafkacrypto.msgs.ByteString;
 import org.kafkacrypto.exceptions.KafkaCryptoException;
+import org.kafkacrypto.exceptions.KafkaCryptoStoreException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,8 @@ public class KafkaCryptoStore extends CryptoStore
   public KafkaCryptoStore(String file, String nodeID) throws KafkaCryptoException
   {
     super(file, nodeID);
+    if (this.need_init)
+      this.__init_kafkacryptostore();
     long log_level = this.load_value("log_level",null,30L);
     if (log_level <= 50L && log_level >= 40L)
       System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "error");
@@ -87,5 +90,21 @@ public class KafkaCryptoStore extends CryptoStore
       rv.setProperty(key, base_config.get(bs).toString());
     }
     return rv;
+  }
+
+  private void __init_kafkacryptostore() throws KafkaCryptoStoreException
+  {
+    this.store_value("bootstrap_servers", "kafka", "");
+    this.store_value("security_protocol", "kafka", "SSL");
+    this.store_value("test", "kafka-consumer", "test");
+    this.store_value("test", "kafka-consumer", (ByteString)null);
+    this.store_value("test", "kafka-producer", "test");
+    this.store_value("test", "kafka-producer", (ByteString)null);
+    this.store_value("test", "kafka-crypto", "test");
+    this.store_value("test", "kafka-crypto", (ByteString)null);
+    this.store_value("test", "kafka-crypto-consumer", "test");
+    this.store_value("test", "kafka-crypto-consumer", (ByteString)null);
+    this.store_value("test", "kakfa-crypto-producer", "test");
+    this.store_value("test", "kakfa-crypto-producer", (ByteString)null);
   }
 }

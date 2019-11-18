@@ -25,6 +25,7 @@ import java.util.Base64;
 class CryptoStore
 {
   protected Logger _logger;
+  protected boolean need_init;
   private Lock lock;
   private Lock keylock;
   private CryptoKey cryptokey;
@@ -38,7 +39,7 @@ class CryptoStore
   }
   public CryptoStore(String file, String nodeID) throws KafkaCryptoException
   {
-    boolean need_init = false;
+    this.need_init = false;
     this._logger = LoggerFactory.getLogger("kafkacrypto-java.cryptostore");
     if (!(new File(file).exists()) && nodeID != null && nodeID.length() > 0) {
       try {
@@ -46,7 +47,7 @@ class CryptoStore
       } catch (IOException ioe) {
         this._logger.warn("  Error writing file.",ioe);
       }
-      need_init = true;
+      this.need_init = true;
     }
     try {
       this.file = new AtomicFile(file);
@@ -54,19 +55,25 @@ class CryptoStore
       this.config = config;
       this.lock = new ReentrantLock();
       this.keylock = new ReentrantLock();
-      if (need_init) {
+      if (this.need_init) {
         this.nodeID = nodeID;
         this.__init_cryptostore(nodeID);
       }
       String nodeIDFile = (this.config.get(new ByteString("DEFAULT")).containsKey(new ByteString("node_id")))
                           ?(this.config.get(new ByteString("DEFAULT")).get(new ByteString("node_id")).toString()):("");
-      if (nodeID.length() > 0 && nodeIDFile.length() > 0 && !nodeID.equals(nodeIDFile))
-        throw new KafkaCryptoStoreException("Mismatch in nodeID in file versus constructor call.");
-      if (nodeID.length() == 0 && nodeIDFile.length() == 0)
+      if (nodeID.length() > 0 && nodeIDFile.length() > 0) {
+        if (!nodeID.equals(nodeIDFile))
+          throw new KafkaCryptoStoreException("Mismatch in nodeID in file versus constructor call.");
+      } else if (nodeID.length() == 0 && nodeIDFile.length() == 0) {
         throw new KafkaCryptoStoreException("No nodeID specified!");
-      this.nodeID = (nodeID.length()>0)?(nodeID):(nodeIDFile);
-      if (!this.config.containsKey(new ByteString(this.nodeID)))
-        this.config.put(new ByteString(this.nodeID),new LinkedHashMap<ByteString,ByteString>());
+      } else if (nodeIDFile.length() == 0) {
+        Map<ByteString,ByteString> nvs = new LinkedHashMap<ByteString,ByteString>();
+        nvs.put(new ByteString("node_id"), new ByteString(nodeID));
+        this.store_values(new ByteString("DEFAULT"),nvs,true);
+      } else { // nodeID.length() == 0
+        nodeID = nodeIDFile;
+      }
+      this.nodeID = nodeID;
     } catch (IOException ioe) {
       throw new KafkaCryptoStoreException("Could not open or read file!", ioe);
     }
@@ -379,29 +386,14 @@ class CryptoStore
   public void __init_cryptostore(String nodeID) throws KafkaCryptoStoreException
   {
     this._logger.warn("Initializing new CryptoStore nodeID={}", nodeID);
-    Map<ByteString,ByteString> nvs = new LinkedHashMap<ByteString,ByteString>();
-    nvs.put(new ByteString("node_id"), new ByteString(nodeID));
-    this.store_values(new ByteString("DEFAULT"),nvs,true);
     this.store_value("test", "", "test");
     this.store_value("test", "", (ByteString)null);
-    this.store_value("bootstrap_servers", "kafka", "");
-    this.store_value("security_protocol", "kafka", "SSL");
-    this.store_value("test", "kafka-consumer", "test");
-    this.store_value("test", "kafka-consumer", (ByteString)null);
-    this.store_value("test", "kafka-producer", "test");
-    this.store_value("test", "kafka-producer", (ByteString)null);
     this._logger.warn("  Including a default/temporary root of trust. Once proper access is provisioned, this root of trust should be removed or distrusted.");
     this.store_value("temporary", "allowlist", Utils.hexToBytes("9300ab9192a7706174686c656e02da00201a13b0aecdd6751c7dfa43e43284326ad01dbc20a8a00b1566092ab0a542620f"));
     this.store_value("test", "denylist", "test");
     this.store_value("test", "denylist", (ByteString)null);
     this.store_value("test", "crypto", "test");
     this.store_value("test", "crypto", (ByteString)null);
-    this.store_value("test", "kafka-crypto", "test");
-    this.store_value("test", "kafka-crypto", (ByteString)null);
-    this.store_value("test", "kafka-crypto-consumer", "test");
-    this.store_value("test", "kafka-crypto-consumer", (ByteString)null);
-    this.store_value("test", "kakfa-crypto-producer", "test");
-    this.store_value("test", "kakfa-crypto-producer", (ByteString)null);
     this._logger.warn("  CryptoStore Initialized.");
   }
 }
