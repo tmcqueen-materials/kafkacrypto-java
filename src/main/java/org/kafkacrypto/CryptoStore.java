@@ -382,6 +382,8 @@ class CryptoStore
     Map<ByteString,ByteString> nvs = new LinkedHashMap<ByteString,ByteString>();
     nvs.put(new ByteString("node_id"), new ByteString(nodeID));
     this.store_values(new ByteString("DEFAULT"),nvs,true);
+    this.store_value("test", "", "test");
+    this.store_value("test", "", (ByteString)null);
     this.store_value("bootstrap_servers", "kafka", "");
     this.store_value("security_protocol", "kafka", "SSL");
     this.store_value("test", "kafka-consumer", "test");

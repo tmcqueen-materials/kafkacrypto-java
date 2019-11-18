@@ -18,8 +18,8 @@ String nodeId = "my-node-ID";
 
 // setup separate consumer/producers for the crypto key passing messages. DO NOT use these for
 // other messages.
-KafkaConsumer<byte[],byte[]> kcc = new KafkaConsumer<byte[],byte[]>(...your server params in normal form...);
-KafkaProducer<byte[],byte[]> kcp = new KafkaProducer<byte[],byte[]>(...your server params in normal form...);
+KafkaConsumer<byte[],byte[]> kcc = new KafkaConsumer<byte[],byte[]>(...your server params and bytearray deserializers in normal form...);
+KafkaProducer<byte[],byte[]> kcp = new KafkaProducer<byte[],byte[]>(...your server params and bytearray serializers in normal form...);
 try {
   KafkaCrypto kc = new KafkaCrypto(nodeId,kcp,kcc,null);
 } catch (KafkaCryptoException kce) {
