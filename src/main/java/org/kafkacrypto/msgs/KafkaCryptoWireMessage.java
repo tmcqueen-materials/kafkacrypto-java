@@ -66,15 +66,20 @@ public class KafkaCryptoWireMessage implements Msgpacker<KafkaCryptoWireMessage>
 
   public boolean isCleartext()
   {
+    return this.isCleartext(true);
+  }
+
+  public boolean isCleartext(boolean retry)
+  {
     if (this.ipt) return true;
-    if (this.root != null && this.deser != null)
+    if (this.root != null && this.deser != null && retry)
       this.deser.decrypt(this);
     return this.ipt;
   }
 
   public byte[] getMessage() throws KafkaCryptoMessageException
   {
-    if (!this.isCleartext())
+    if (!this.isCleartext(true))
       throw new KafkaCryptoMessageException("Message not decrypted!");
     return msg;
   }

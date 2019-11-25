@@ -359,6 +359,41 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     }
   }
 
+  private class KafkaCryptoMessageSerializer implements Serializer<KafkaCryptoMessage>
+  {
+    private KafkaCrypto _parent;
+    private boolean _key;
+    private Serializer<byte[]> _byter;
+    public KafkaCryptoMessageSerializer(KafkaCrypto parent, boolean key)
+    {
+      this._parent = parent;
+      this._key = key;
+      this._byter = new KafkaCrypto.ByteSerializer(parent, key);
+    }
+    public void close()
+    {
+      this._byter.close();
+      this._parent = null;
+    }
+    public void configure(Map<String,?> configs, boolean isKey)
+    {
+      this._key = isKey;
+    }
+    public byte[] serialize(String topic, KafkaCryptoMessage data)
+    {
+      if (data.isCleartext(false))
+        try {
+          return this._byter.serialize(topic, data.getMessage());
+        } catch (KafkaCryptoException kce) {
+        }
+      try {
+        return data.toWire();
+      } catch (IOException ioe) {
+        throw new KafkaCryptoInternalError("Error serializing KafkaCryptoMessage.", ioe);
+      }
+    }
+  }
+
   private class KafkaCryptoMessageDeserializer implements Deserializer<KafkaCryptoMessage>, KafkaCryptoMessageDecryptor<KafkaCryptoWireMessage>
   {
     private KafkaCrypto _parent;
@@ -437,13 +472,29 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     }
   }
 
-  public Serializer getKeySerializer()
+  public Serializer<byte[]> getKeySerializer()
+  {
+    return this.getKeyByteSerializer();
+  }
+  public Serializer<byte[]> getValueSerializer()
+  {
+    return this.getValueByteSerializer();
+  }
+  public Serializer<byte[]> getKeyByteSerializer()
   {
     return new KafkaCrypto.ByteSerializer(this,true);
   }
-  public Serializer getValueSerializer()
+  public Serializer<byte[]> getValueByteSerializer()
   {
     return new KafkaCrypto.ByteSerializer(this,false);
+  }
+  public Serializer<KafkaCryptoMessage> getKeyKafkaCryptoMessageSerializer()
+  {
+    return new KafkaCrypto.KafkaCryptoMessageSerializer(this,true);
+  }
+  public Serializer<KafkaCryptoMessage> getValueKafkaCryptoMessageSerializer()
+  {
+    return new KafkaCrypto.KafkaCryptoMessageSerializer(this,false);
   }
   public Deserializer<KafkaCryptoMessage> getKeyDeserializer()
   {

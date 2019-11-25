@@ -44,6 +44,11 @@ public class KafkaPlainWireMessage implements Msgpacker<KafkaPlainWireMessage>, 
     return msg;
   }
 
+  public boolean isCleartext(boolean retry)
+  {
+    return true;
+  }
+
   public boolean isCleartext()
   {
     return true;

@@ -14,6 +14,7 @@ public interface KafkaCryptoMessage
 {
   static final Logger _logger = LoggerFactory.getLogger("kafkacrypto-java.kafkacryptomessage");
   public boolean isCleartext();
+  public boolean isCleartext(boolean retry);
   public byte[] getMessage() throws KafkaCryptoMessageException;
   public byte[] toWire() throws IOException;
 
