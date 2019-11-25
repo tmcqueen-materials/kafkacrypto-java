@@ -54,7 +54,7 @@ This code is available on [Maven Central](https://search.maven.org/artifact/org.
     <dependency>
       <groupId>org.kafkacrypto</groupId>
       <artifactId>kafkacrypto-java</artifactId>
-      <version>0.9.9.4</version> <!-- change to latest version for best performance -->
+      <version>0.9.9.5</version> <!-- change to latest version for best performance -->
     </dependency>
 ```
 
