@@ -69,7 +69,7 @@ public class msgpack
     if (input == null) {
       packer.packNil();
     } else {
-      packer.packRawStringHeader(input.length);
+      packer.packBinaryHeader(input.length);
       packer.writePayload(input);
     }
   }
