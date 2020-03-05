@@ -35,6 +35,7 @@ public interface CertPoison<E>
   public static boolean multimatch(String wanted, List<String> choices)
   {
     for (String c : choices) {
+      if (c.equals("^.*$")) return true; // choices has a "match everything" regex
       if (!wanted.startsWith("^")) {
         // Wanted is a Literal
         if (!c.startsWith("^")) {
