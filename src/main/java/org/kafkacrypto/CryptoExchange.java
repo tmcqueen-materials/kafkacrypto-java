@@ -290,7 +290,7 @@ public class CryptoExchange
           try {
             chain.process_chain(null,"key-encrypt-request",this.__allowlist,this.__denylist);
             this.__spk_direct_request = true;
-          } catch (KafkaCryptoExchangeException kcee) {
+          } catch (KafkaCryptoInternalError kcie) {
             this.__spk_direct_request = false;
           }
           return chain;
