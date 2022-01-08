@@ -38,6 +38,7 @@ public class CryptoExchange
   private CryptoKey __cryptokey;
   private SignedChain __spk_chain = new SignedChain();
   private ChainCert __spk = null;
+  private boolean __spk_direct_request = true;
   private Lock __spk_lock = new ReentrantLock();
   private List<ChainCert> __allowlist = new ArrayList<ChainCert>(), __denylist = new ArrayList<ChainCert>();
   private Lock __allowdenylist_lock = new ReentrantLock();
@@ -183,6 +184,7 @@ public class CryptoExchange
     try {
       SignedChain rv = new SignedChain(this.__spk_chain);
       if (rv.chain.size() == 0) {
+        this.__spk_direct_request = true;
         ChainCert tempcc = new ChainCert(), tempcc2 = new ChainCert();
         tempcc.max_age = Utils.currentTime() + this.__maxage;
         tempcc.poisons.add(new TopicsPoison(topic));
@@ -250,13 +252,11 @@ public class CryptoExchange
     return null;
   }
 
-  public boolean valid_spk_chain()
+  public boolean direct_request_spk_chain()
   {
     this.__spk_lock.lock();
     try {
-      if (this.__spk_chain.chain.size() > 0)
-        return true;
-      return false;
+      return this.__spk_direct_request;
     } finally {
       this.__spk_lock.unlock();
     }
@@ -285,6 +285,14 @@ public class CryptoExchange
         if (this.__spk == null || new_spk.max_age > this.__spk.max_age) {
           this.__spk_chain = chain;
           this.__spk = new_spk;
+          // check if direct requests will work. default to false
+          this.__spk_direct_request = false;
+          try {
+            chain.process_chain(null,"key-encrypt-request",this.__allowlist,this.__denylist);
+            this.__spk_direct_request = true;
+          } catch (KafkaCryptoExchangeException kcee) {
+            this.__spk_direct_request = false
+          }
           return chain;
         } else {
           this._logger.warn("Non-superior chain: {} vs {}", this.__spk.max_age, new_spk.max_age);

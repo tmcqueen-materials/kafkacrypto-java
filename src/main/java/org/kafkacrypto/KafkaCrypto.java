@@ -246,8 +246,8 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
             byte[] needrequest = this._cryptoexchange.signed_epk(root,null);
             if (needmsg != null && needrequest != null) {
               this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_SUBS"), needmsg, needrequest));
-              if (!this._cryptoexchange.valid_spk_chain()) {
-                // If using default/temp ROT, send directly as well
+              if (this._cryptoexchange.direct_request_spk_chain()) {
+                // If it may succeed, send directly as well
                 this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_REQS"), needmsg, needrequest));
               }
               for (byte[] ki : needed)
