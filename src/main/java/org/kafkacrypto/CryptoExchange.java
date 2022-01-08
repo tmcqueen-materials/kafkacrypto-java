@@ -291,7 +291,7 @@ public class CryptoExchange
             chain.process_chain(null,"key-encrypt-request",this.__allowlist,this.__denylist);
             this.__spk_direct_request = true;
           } catch (KafkaCryptoExchangeException kcee) {
-            this.__spk_direct_request = false
+            this.__spk_direct_request = false;
           }
           return chain;
         } else {
