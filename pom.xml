@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -9,7 +8,7 @@
   <scm>
     <connection>scm:git:git://github.com/tmcqueen-materials/kafkacrypto-java.git</connection>
     <url>https://github.com/tmcqueen-materials/kafkacrypto-java</url>
-    <tag>HEAD</tag>
+    <tag>kafkacrypto-java-0.9.9.12</tag>
   </scm>
   <distributionManagement>
     <snapshotRepository>
@@ -168,7 +167,7 @@
   <groupId>org.kafkacrypto</groupId>
   <artifactId>kafkacrypto-java</artifactId>
   <packaging>jar</packaging>
-  <version>0.9.9.12-SNAPSHOT</version>
+  <version>0.9.9.12</version>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Java port of kafkacrypto, a lightweight and cross-platform/cross-language encryption library for Apache Kafka.</description>
   <url>https://github.com/tmcqueen-materials/kafkacrypto-java</url>
