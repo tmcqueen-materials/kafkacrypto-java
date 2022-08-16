@@ -57,6 +57,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
   }
 
   private Ratchet _seed;
+  private boolean _seed_close;
   private double _last_time;
   private Map<TopicPartition,OffsetAndMetadata> _tps;
   private boolean _tps_updated;
@@ -92,8 +93,10 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     }
     if (Ratchet.class.isAssignableFrom(seed.getClass())) {
       this._seed = (Ratchet)seed;
+      this._seed_close = false;
     } else {
       this._seed = new Ratchet((String)seed);
+      this._seed_close = true;
     }
 
     this._last_time = Utils.currentTime();
@@ -132,6 +135,11 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     } catch (InterruptedException ie) {
       throw new KafkaCryptoInternalError("Interrupted during close.", ie);
     }
+    this._mgmt_thread = null;
+    if (this._seed_close)
+      this._seed.close();
+    this._seed = null;
+    super.close();
   }
 
   public void run()

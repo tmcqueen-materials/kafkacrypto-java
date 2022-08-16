@@ -30,6 +30,13 @@ public class KeyGenerator
       this.rekey(secret);
   }
 
+  public void close()
+  {
+    this.__secret = null;
+    this.__ctx = null;
+    this.__salt = null;
+  }
+
   public void rekey(byte[] secret) throws KafkaCryptoGeneratorException
   {
     if ((secret.length != this.SECRETSIZE) || (this.__secret != null && !Arrays.equals(this.__secret, secret)))

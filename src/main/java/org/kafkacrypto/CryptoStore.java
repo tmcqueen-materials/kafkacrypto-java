@@ -61,21 +61,39 @@ class CryptoStore
       }
       String nodeIDFile = (this.config.get(new ByteString("DEFAULT")).containsKey(new ByteString("node_id")))
                           ?(this.config.get(new ByteString("DEFAULT")).get(new ByteString("node_id")).toString()):("");
-      if (nodeID.length() > 0 && nodeIDFile.length() > 0) {
+      if ((nodeID != null && nodeID.length() > 0) && nodeIDFile.length() > 0) {
         if (!nodeID.equals(nodeIDFile))
           throw new KafkaCryptoStoreException("Mismatch in nodeID in file versus constructor call.");
-      } else if (nodeID.length() == 0 && nodeIDFile.length() == 0) {
+      } else if ((nodeID == null || nodeID.length() == 0) && nodeIDFile.length() == 0) {
         throw new KafkaCryptoStoreException("No nodeID specified!");
       } else if (nodeIDFile.length() == 0) {
         Map<ByteString,ByteString> nvs = new LinkedHashMap<ByteString,ByteString>();
         nvs.put(new ByteString("node_id"), new ByteString(nodeID));
         this.store_values(new ByteString("DEFAULT"),nvs,true);
-      } else { // nodeID.length() == 0
+      } else { // nodeID == null || nodeID.length() == 0
         nodeID = nodeIDFile;
       }
       this.nodeID = nodeID;
     } catch (IOException ioe) {
       throw new KafkaCryptoStoreException("Could not open or read file!", ioe);
+    }
+  }
+
+  public void close()
+  {
+    this.lock.lock();
+    try {
+      this.file.close();
+    } catch (IOException ioe) {
+      // Do nothing
+    } finally {
+      this.file = null;
+      this.keylock.lock();
+      this.cryptokey = null;
+      this.keylock.unlock();
+      this.keylock = null;
+      this.lock.unlock();
+      this.lock = null;
     }
   }
 

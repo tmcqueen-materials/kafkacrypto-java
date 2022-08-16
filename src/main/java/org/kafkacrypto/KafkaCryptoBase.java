@@ -30,6 +30,7 @@ class KafkaCryptoBase
   protected Logger _logger;
   protected String _nodeID;
   protected CryptoStore _cryptostore;
+  protected boolean _cryptostore_close;
   protected CryptoKey _cryptokey;
   protected CryptoExchange _cryptoexchange;
   protected Properties _config;
@@ -44,10 +45,13 @@ class KafkaCryptoBase
       throw new KafkaCryptoBaseException("At least one of Node ID and Config file must be specified.");
     if (config == null)
       config = nodeID + ".config";
-    if (CryptoStore.class.isAssignableFrom(config.getClass()))
+    if (CryptoStore.class.isAssignableFrom(config.getClass())) {
       this._cryptostore = (CryptoStore)config;
-    else
+      this._cryptostore_close = false;
+    } else {
       this._cryptostore = new CryptoStore((String)config, nodeID);
+      this._cryptostore_close = true;
+    }
     nodeID = this._cryptostore.get_nodeID();
     this._nodeID = nodeID;
 
@@ -94,6 +98,20 @@ class KafkaCryptoBase
   {
     int lio = topic.lastIndexOf(this._config.getProperty("TOPIC_SEPARATOR"));
     return topic.substring(0,(lio>0)?(lio):(topic.length()));
+  }
+
+  public void close()
+  {
+    this._kp.close();
+    this._kp = null;
+    this._kc.close();
+    this._kc = null;
+    if (this._cryptostore_close)
+      this._cryptostore.close();
+    this._cryptostore = null;
+    // Never close these two, just release objects.
+    this._cryptokey = null;
+    this._cryptoexchange = null;
   }
 
   private void __configure()

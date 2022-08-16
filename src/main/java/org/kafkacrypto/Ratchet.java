@@ -26,6 +26,7 @@ public class Ratchet extends KeyGenerator
 {
   private final static byte[] __ctx = {'r','a','t','c','h','e','t',0,0,0,0,0,0,0,0,0};
   private RandomAccessFile __file;
+  private boolean __file_close;
   private BigInteger __keyidx;
 
   private static RandomAccessFile open_file(String file) throws KafkaCryptoRatchetException
@@ -41,17 +42,36 @@ public class Ratchet extends KeyGenerator
 
   public Ratchet(String file) throws KafkaCryptoException
   {
-    this(Ratchet.open_file(file));
+    this(Ratchet.open_file(file), true);
   }
 
   public Ratchet(RandomAccessFile file) throws KafkaCryptoException
   {
+    this(file, false);
+  }
+
+  public Ratchet(RandomAccessFile file, boolean toclose) throws KafkaCryptoException
+  {
     super();
     try {
       this.__file = file;
+      this.__file_close = toclose;
       this.increment();
     } catch (Exception e) {
       throw new KafkaCryptoRatchetException(e.getMessage());
+    }
+  }
+
+  public void close()
+  {
+    try {
+      if (this.__file_close)
+        this.__file.close();
+    } catch (IOException ioe) {
+      // Do nothing
+    } finally {
+      this.__file = null;
+      super.close();
     }
   }
 
