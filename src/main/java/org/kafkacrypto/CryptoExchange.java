@@ -6,6 +6,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.kafkacrypto.jasodium;
 import org.kafkacrypto.CryptoKey;
 import org.kafkacrypto.Utils;
+import org.kafkacrypto.msgs.SignPublicKey;
+import org.kafkacrypto.msgs.KEMPublicKey;
 import org.kafkacrypto.msgs.SignedChain;
 import org.kafkacrypto.msgs.ChainCert;
 import org.kafkacrypto.msgs.TopicsPoison;
@@ -24,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Arrays;
 
 import org.kafkacrypto.types.ByteHashMap;
 
@@ -73,12 +74,11 @@ public class CryptoExchange
     this.__allowdenylist_lock.lock();
     try {
       ChainCert pk = (new SignedChain().unpackb(msgval)).process_chain(topic,"key-encrypt-request",this.__allowlist,this.__denylist);
-      byte[] epk = this.__cryptokey.get_epk(topic, "encrypt_keys");
-      byte[][] pks = new byte[1][0];
-      pks[0] = pk.pk;
+      KEMPublicKey epk = this.__cryptokey.get_epk(topic, "encrypt_keys");
+      KEMPublicKey[] pks = new KEMPublicKey[1];
+      pks[0] = new KEMPublicKey(pk.pk);
       byte[][] eks = this.__cryptokey.use_epk(topic, "encrypt_keys", pks, true);
       byte[] ek = eks[0];
-      eks[0] = epk;
       byte[] random0 = pk.getExtra(0).asRawValue().asByteArray();
       byte[] random1 = jasodium.randombytes(this.__randombytes);
       byte[] ss = Utils.splitArray(jasodium.crypto_hash_sha256(Utils.concatArrays(topic.getBytes(),random0,random1,ek)),jasodium.CRYPTO_SECRETBOX_KEYBYTES)[0];
@@ -93,8 +93,10 @@ public class CryptoExchange
       cc.max_age = Utils.currentTime() + this.__maxage;
       cc.poisons.add(new TopicsPoison(topic));
       cc.poisons.add(new UsagesPoison("key-encrypt"));
-      cc.pk = eks[0];
-      cc.pk_array = eks;
+      SignPublicKey[] spk = new SignPublicKey[1];
+      spk[0] = new SignPublicKey(epk);
+      cc.pk = spk[0];
+      cc.pk_array = spk;
       List<Value> randoms = new ArrayList<Value>();
       randoms.add(new Variable().setStringValue(random0));
       randoms.add(new Variable().setStringValue(random1));
@@ -143,7 +145,9 @@ public class CryptoExchange
       byte[] msg = pk.getExtra(1).asRawValue().asByteArray();
       byte[] random0 = rnd.get(0).asRawValue().asByteArray();
       byte[] random1 = rnd.get(1).asRawValue().asByteArray();
-      byte[][] pks = pk.pk_array;
+      KEMPublicKey[] pks = new KEMPublicKey[pk.pk_array.length];
+      for (int i = 0; i < pk.pk_array.length; i++)
+        pks[i] = new KEMPublicKey(pk.pk_array[i]);
       byte[][] eks = this.__cryptokey.use_epk(topic, "decrypt_keys", pks, false);
       for (byte[] ck : eks) {
         try {
@@ -154,7 +158,7 @@ public class CryptoExchange
           Map<byte[],byte[]> rv = new ByteHashMap<byte[]>();
           for (int i = 0; i < rvs.size(); i += 2)
             rv.put(rvs.get(i).asRawValue().asByteArray(), rvs.get(i+1).asRawValue().asByteArray());
-          this.__cryptokey.use_epk(topic, "decrypt_keys", new byte[0][], true);
+          this.__cryptokey.use_epk(topic, "decrypt_keys", new KEMPublicKey[0], true);
           return rv;
         } catch (Throwable t) {
           this._logger.debug("Failure to decrypt keys", t);
@@ -168,22 +172,57 @@ public class CryptoExchange
     return null;
   }
 
-  public byte[] signed_epk(String topic, byte[] epk) throws IOException
+  public byte[][] signed_epk(String topic) throws IOException
   {
-    if (epk == null)
-      epk = this.__cryptokey.get_epk(topic,"decrypt_keys");
+    byte[][] rv;
+    if (this.__cryptokey.use_legacy())
+      rv = new byte[2][];
+    else
+      rv = new byte[1][];
+    SignPublicKey epk = new SignPublicKey(this.__cryptokey.get_epk(topic,"decrypt_keys"));
+    SignPublicKey[] epks = new SignPublicKey[1];
+    epks[0] = epk;
     byte[] random0 = jasodium.randombytes(this.__randombytes);
     ChainCert cc = new ChainCert();
     cc.poisons.add(new TopicsPoison(topic));
     cc.poisons.add(new UsagesPoison("key-encrypt-request", "key-encrypt-subscribe"));
     cc.max_age = Utils.currentTime() + this.__maxage;
     cc.pk = epk;
+    cc.pk_array = null;
     cc.extra.add(new Variable().setStringValue(random0));
+    if (this.__cryptokey.use_legacy()) {
+      byte[] msg = this.__cryptokey.sign_spk(msgpack.packb(cc));
+      this.__spk_lock.lock();
+      try {
+        SignedChain sc = new SignedChain(this.__spk_chain);
+        if (sc.chain.size() == 0) {
+          this.__spk_direct_request = true;
+          ChainCert tempcc = new ChainCert(), tempcc2 = new ChainCert();
+          tempcc.max_age = Utils.currentTime() + this.__maxage;
+          tempcc.poisons.add(new TopicsPoison(topic));
+          tempcc.poisons.add(new UsagesPoison("key-encrypt-request","key-encrypt-subscribe"));
+          tempcc.poisons.add(new PathlenPoison(1));
+          tempcc.pk = this.__cryptokey.get_spk();
+          sc.append(jasodium.crypto_sign(msgpack.packb(tempcc), jasodium.crypto_sign_seed_keypair(Utils.hexToBytes("4c194f7de97c67626cc43fbdaf93dffbc4735352b37370072697d44254e1bc6c"))[1]));
+          SignedChain provision = new SignedChain();
+          tempcc2.max_age = 0;
+          tempcc2.pk = this.__cryptokey.get_spk();
+          provision.append(msgpack.packb(tempcc2));
+          provision.append(this.__cryptokey.sign_spk(msgpack.packb(tempcc)));
+          this._logger.warn("Current signing chain is empty. Use {} to provision access and then remove temporary root of trust from allowedlist.", Utils.bytesToHex(msgpack.packb(provision)));
+        }
+        sc.append(msg);
+        rv[1] = msgpack.packb(sc);
+      } finally {
+        this.__spk_lock.unlock();
+      }
+    }
+    cc.pk_array = epks;
     byte[] msg = this.__cryptokey.sign_spk(msgpack.packb(cc));
     this.__spk_lock.lock();
     try {
-      SignedChain rv = new SignedChain(this.__spk_chain);
-      if (rv.chain.size() == 0) {
+      SignedChain sc = new SignedChain(this.__spk_chain);
+      if (sc.chain.size() == 0) {
         this.__spk_direct_request = true;
         ChainCert tempcc = new ChainCert(), tempcc2 = new ChainCert();
         tempcc.max_age = Utils.currentTime() + this.__maxage;
@@ -191,19 +230,20 @@ public class CryptoExchange
         tempcc.poisons.add(new UsagesPoison("key-encrypt-request","key-encrypt-subscribe"));
         tempcc.poisons.add(new PathlenPoison(1));
         tempcc.pk = this.__cryptokey.get_spk();
-        rv.append(jasodium.crypto_sign(msgpack.packb(tempcc), jasodium.crypto_sign_seed_keypair(Utils.hexToBytes("4c194f7de97c67626cc43fbdaf93dffbc4735352b37370072697d44254e1bc6c"))[1]));
+        sc.append(jasodium.crypto_sign(msgpack.packb(tempcc), jasodium.crypto_sign_seed_keypair(Utils.hexToBytes("4c194f7de97c67626cc43fbdaf93dffbc4735352b37370072697d44254e1bc6c"))[1]));
         SignedChain provision = new SignedChain();
-       	tempcc2.max_age = 0;
+        tempcc2.max_age = 0;
         tempcc2.pk = this.__cryptokey.get_spk();
         provision.append(msgpack.packb(tempcc2));
         provision.append(this.__cryptokey.sign_spk(msgpack.packb(tempcc)));
         this._logger.warn("Current signing chain is empty. Use {} to provision access and then remove temporary root of trust from allowedlist.", Utils.bytesToHex(msgpack.packb(provision)));
       }
-      rv.append(msg);
-      return msgpack.packb(rv);
+      sc.append(msg);
+      rv[0] = msgpack.packb(sc);
     } finally {
       this.__spk_lock.unlock();
     }
+    return rv;
   }
 
   public ChainCert add_allowlist(SignedChain allow)
@@ -278,7 +318,7 @@ public class CryptoExchange
         return null;
       this.__spk_lock.lock();
       try {
-        if (!Arrays.equals(this.__cryptokey.get_spk(), new_spk.pk)) {
+        if (!this.__cryptokey.get_spk().equals(new_spk.pk)) {
           this._logger.warn("Key mismatch: {} vs {}", this.__cryptokey.get_spk(), new_spk.pk);
           throw new KafkaCryptoExchangeException("New chain does not match current signing public key!");
         }

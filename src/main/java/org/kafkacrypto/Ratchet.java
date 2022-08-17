@@ -1,5 +1,6 @@
 package org.kafkacrypto;
 
+import org.kafkacrypto.msgs.SignPublicKey;
 import org.kafkacrypto.msgs.RatchetFileFormat;
 import org.kafkacrypto.msgs.EncryptionKey;
 import org.kafkacrypto.msgs.msgpack;
@@ -108,19 +109,20 @@ public class Ratchet extends KeyGenerator
     }
   }
 
-  public EncryptionKey get_key_value_generators(String topic, byte[] node) throws KafkaCryptoException
+  public EncryptionKey get_key_value_generators(String topic, SignPublicKey node) throws KafkaCryptoException
   {
     EncryptionKey rv = new EncryptionKey();
     byte[][] hashparts = Utils.splitArray(jasodium.crypto_hash_sha256(topic.getBytes()),this.SALTSIZE);
     byte[][] kn = this.generate(hashparts[0],hashparts[1],this.SECRETSIZE,0);
     rv.root = topic;
     if (node != null) {
+      byte[] nodebytes = node.getBytes();
       byte[] ki = this.__keyidx.toByteArray();
-      byte[] nki = new byte[16+node.length];
+      byte[] nki = new byte[16+nodebytes.length];
       for (int i = 0; i < ki.length; i++)
-        nki[i+(16-ki.length)+node.length] = ki[i];
-      for (int i = 0; i < node.length; i++)
-        nki[i] = node[i];
+        nki[i+(16-ki.length)+nodebytes.length] = ki[i];
+      for (int i = 0; i < nodebytes.length; i++)
+        nki[i] = nodebytes[i];
       ki = jasodium.crypto_generichash(nki, null, 0);
       rv.keyIndex = ki;
     } else

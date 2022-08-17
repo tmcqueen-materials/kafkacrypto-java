@@ -1,9 +1,11 @@
 package org.kafkacrypto.msgs;
 
-import org.kafkacrypto.Utils;
+import org.kafkacrypto.msgs.SignPublicKey;
 import org.kafkacrypto.msgs.CertPoisons;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.Msgpacker;
+
+import org.kafkacrypto.Utils;
 
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageBufferPacker;
@@ -18,8 +20,8 @@ public class ChainCert implements Msgpacker<ChainCert>
 {
   public double max_age = 0;
   public CertPoisons poisons;
-  public byte[] pk = null;
-  public byte[][] pk_array = null;
+  public SignPublicKey pk = null;
+  public SignPublicKey[] pk_array = null;
   public List<Value> extra;
 
   public ChainCert()
@@ -35,14 +37,41 @@ public class ChainCert implements Msgpacker<ChainCert>
     this.max_age = src.get(0).asNumberValue().toDouble();
     this.poisons = new CertPoisons().unpackb(src.get(1).asRawValue().asByteArray());
     if (src.get(2).isArrayValue()) {
+      // (1) this is either an array of arrays (new format with multiple keys)
+      // (2) or an array of a version,key pair (new format with single key)
+      // (3) or an array of bytearray values (old format)
       List<Value> vals = src.get(2).asArrayValue().list();
-      this.pk_array = new byte[vals.size()][];
-      for (int i = 0; i < vals.size(); i++)
-        this.pk_array[i] = vals.get(i).asRawValue().asByteArray();
-      if (this.pk_array.length > 0)
-        this.pk = pk_array[0];
+      if (vals.get(0).isIntegerValue()) {
+        // case 2
+        this.pk = new SignPublicKey().unpackb(vals);
+      } else { // cases 1 and 3
+        this.pk_array = new SignPublicKey[vals.size()];
+        int j = 0;
+        for (int i = 0; i < vals.size(); i++)
+          if (vals.get(i).isArrayValue()) {
+            SignPublicKey next = new SignPublicKey().unpackb(vals.get(i).asArrayValue().list());
+            if (next != null && next.version > 0) {
+              this.pk_array[j] = next;
+              j++;
+            }
+          } else {
+            SignPublicKey next = new SignPublicKey(vals.get(i).asRawValue().asByteArray());
+            if (next != null && next.version > 0) {
+              this.pk_array[j] = next;
+              j++;
+            }
+          }
+        if (j < this.pk_array.length) {
+          SignPublicKey[] new_pk_array = new SignPublicKey[j];
+          for (int i = 0; i < j; i++)
+            new_pk_array[i] = this.pk_array[i];
+          this.pk_array = new_pk_array;
+        }
+        if (this.pk_array.length > 0)
+          this.pk = this.pk_array[0];
+      }
     } else {
-      this.pk = src.get(2).asRawValue().asByteArray();
+      this.pk = new SignPublicKey(src.get(2).asRawValue().asByteArray());
     }
     this.extra = new ArrayList<Value>();
     for (int i = 3; i < src.size(); i++)
@@ -89,12 +118,12 @@ public class ChainCert implements Msgpacker<ChainCert>
     sb.append(this.poisons.toString());
     sb.append(", ");
     if (this.pk_array == null) {
-      sb.append(Utils.bytesToHex(this.pk));
+      sb.append(this.pk.toString());
     } else {
       sb.append("[");
       for (int i = 0; i < this.pk_array.length; i++) {
         if (i > 0) sb.append(", ");
-        sb.append(Utils.bytesToHex(this.pk_array[i]));
+        sb.append(this.pk_array[i].toString());
       }
       sb.append("]");
     }

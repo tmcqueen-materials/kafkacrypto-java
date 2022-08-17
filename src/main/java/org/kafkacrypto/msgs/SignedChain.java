@@ -84,7 +84,7 @@ public class SignedChain implements Msgpacker<SignedChain>
       boolean denylisted = false;
       try {
         for (byte[] next : chain) {
-          ChainCert npk = new ChainCert().unpackb(jasodium.crypto_sign_open(next,lpk.pk));
+          ChainCert npk = new ChainCert().unpackb(lpk.pk.crypto_sign_open(next));
           if (ChainCert.key_in_list(lpk, denied) != null) {
             denylisted = true;
           } else if (ChainCert.key_in_list(lpk, allowed) != null) {

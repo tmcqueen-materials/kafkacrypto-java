@@ -186,12 +186,13 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
               String root = msg.topic().substring(0,msg.topic().lastIndexOf(this._config.getProperty("TOPIC_SUFFIX_KEYS")));
               this._cgens.ensureContains(root);
               Map<byte[],byte[]> newkeys = this._cryptoexchange.decrypt_keys(root,msg.value());
-              for (byte[] ki : newkeys.keySet()) {
-                if (!this._cgens.get(root).containsKey(ki))
-                  this._cgens.get(root).put(ki, new EncryptionKey(root, ki, newkeys.get(ki)));
-                else
-                  this._cgens.get(root).get(ki).setKey(newkeys.get(ki));
-              }
+              if (newkeys != null)
+                for (byte[] ki : newkeys.keySet()) {
+                  if (!this._cgens.get(root).containsKey(ki))
+                    this._cgens.get(root).put(ki, new EncryptionKey(root, ki, newkeys.get(ki)));
+                  else
+                    this._cgens.get(root).get(ki).setKey(newkeys.get(ki));
+                }
             } else if (msg.topic().equals(this._config.getProperty("MGMT_TOPIC_CHAINS"))) {
               if (this._cryptokey.get_spk().equals(msg.key())) {
                 SignedChain sc = this._cryptoexchange.replace_spk_chain(new SignedChain().unpackb(msg.value()));
@@ -201,17 +202,17 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
             } else if (msg.topic().equals(this._config.getProperty("MGMT_TOPIC_ALLOWLIST"))) {
               ChainCert cc = this._cryptoexchange.add_allowlist(new SignedChain().unpackb(msg.value()));
               if (cc != null)
-                this._cryptostore.store_value(jasodium.crypto_hash_sha256(cc.pk),"allowlist",msgpack.packb(cc));
+                this._cryptostore.store_value(jasodium.crypto_hash_sha256(cc.pk.getBytes()),"allowlist",msgpack.packb(cc));
             } else if (msg.topic().equals(this._config.getProperty("MGMT_TOPIC_DENYLIST"))) {
               ChainCert cc = this._cryptoexchange.add_denylist(new SignedChain().unpackb(msg.value()));
               if (cc != null)
-                this._cryptostore.store_value(jasodium.crypto_hash_sha256(cc.pk),"denylist",msgpack.packb(cc));
+                this._cryptostore.store_value(jasodium.crypto_hash_sha256(cc.pk.getBytes()),"denylist",msgpack.packb(cc));
             } else {
               this._logger.warn("Help! I'm lost. Unknown message received on topic={}", msg.topic());
             }
           }
         } catch (Throwable e) {
-          this._logger.info("Exception during message processin", e);
+          this._logger.info("Exception during message processing", e);
         } finally {
           this._lock.unlock();
         }
@@ -251,15 +252,17 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
             }
           if (needed.size() > 0) {
             byte[] needmsg = msgpack.packb(needed);
-            byte[] needrequest = this._cryptoexchange.signed_epk(root,null);
-            if (needmsg != null && needrequest != null) {
-              this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_SUBS"), needmsg, needrequest));
-              if (this._cryptoexchange.direct_request_spk_chain()) {
-                // If it may succeed, send directly as well
-                this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_REQS"), needmsg, needrequest));
+            byte[][] needrequests = this._cryptoexchange.signed_epk(root);
+            for (byte[] needrequest : needrequests) {
+              if (needmsg != null && needrequest != null) {
+                this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_SUBS"), needmsg, needrequest));
+                if (this._cryptoexchange.direct_request_spk_chain()) {
+                  // If it may succeed, send directly as well
+                  this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_REQS"), needmsg, needrequest));
+                }
+                for (byte[] ki : needed)
+                  this._cgens.get(root).get(ki).resub(Utils.currentTime());
               }
-              for (byte[] ki : needed)
-                this._cgens.get(root).get(ki).resub(Utils.currentTime());
             }
           }
         }

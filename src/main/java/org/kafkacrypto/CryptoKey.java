@@ -3,6 +3,9 @@ package org.kafkacrypto;
 import org.kafkacrypto.jasodium;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.CryptoKeyFileFormat;
+import org.kafkacrypto.msgs.SignPublicKey;
+import org.kafkacrypto.msgs.KEMPublicKey;
+import org.kafkacrypto.msgs.KEMSecretKey;
 import org.kafkacrypto.exceptions.KafkaCryptoException;
 import org.kafkacrypto.exceptions.KafkaCryptoKeyException;
 
@@ -27,10 +30,11 @@ public class CryptoKey
 {
   private byte __version;
   private boolean __use_legacy;
-  private byte[] __ssk, __spk, __ek;
+  private byte[] __ssk, __ek;
+  private SignPublicKey __spk;
   private List<Byte> __versions;
 
-  private Map<String,Map<String,byte[][]>> __eskepk;
+  private Map<String,Map<String,KEMSecretKey>> __eskepk;
   private Lock __eskepklock;
 
   public CryptoKey(String file) throws KafkaCryptoException
@@ -44,7 +48,7 @@ public class CryptoKey
       CryptoKeyFileFormat ckff = new CryptoKeyFileFormat().unpackb(Files.readAllBytes(Paths.get(file)));
       this.__version = ckff.version;
       this.__ssk = ckff.ssk;
-      this.__spk = jasodium.crypto_sign_sk_to_pk(this.__ssk);
+      this.__spk = new SignPublicKey(jasodium.crypto_sign_sk_to_pk(this.__ssk));
       this.__ek = ckff.ek;
       this.__use_legacy = ckff.use_legacy;
       this.__versions = ckff.versions;
@@ -60,10 +64,10 @@ public class CryptoKey
       throw new KafkaCryptoKeyException("Could not read CryptoKey file!", ioe);
     }
     this.__eskepklock = new ReentrantLock();
-    this.__eskepk = new HashMap<String,Map<String,byte[][]>>();
+    this.__eskepk = new HashMap<String,Map<String,KEMSecretKey>>();
   }
 
-  public byte[] get_spk()
+  public SignPublicKey get_spk()
   {
     return this.__spk;
   }
@@ -73,23 +77,20 @@ public class CryptoKey
     return jasodium.crypto_sign(msg, this.__ssk);
   }
 
-  public byte[] get_epk(String topic, String usage)
+  public KEMPublicKey get_epk(String topic, String usage)
   {
     this.__eskepklock.lock();
     try {
       if (!this.__eskepk.containsKey(topic))
-        this.__eskepk.put(topic, new HashMap<String,byte[][]>());
-      if (!this.__eskepk.get(topic).containsKey(usage))
-        this.__eskepk.get(topic).put(usage, new byte[2][]);
-      this.__eskepk.get(topic).get(usage)[0] = jasodium.randombytes(jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES);
-      this.__eskepk.get(topic).get(usage)[1] = jasodium.crypto_scalarmult_curve25519_base(this.__eskepk.get(topic).get(usage)[0]);
-      return this.__eskepk.get(topic).get(usage)[1];
+        this.__eskepk.put(topic, new HashMap<String,KEMSecretKey>());
+      this.__eskepk.get(topic).put(usage, new KEMSecretKey(jasodium.randombytes(jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES)));
+      return new KEMPublicKey(this.__eskepk.get(topic).get(usage));
     } finally {
       this.__eskepklock.unlock();
     }
   }
 
-  public byte[][] use_epk(String topic, String usage, byte[][] pks, boolean clear)
+  public byte[][] use_epk(String topic, String usage, KEMPublicKey[] pks, boolean clear)
   {
     byte[][] rv = new byte[pks.length][];
     this.__eskepklock.lock();
@@ -97,8 +98,8 @@ public class CryptoKey
       if (!this.__eskepk.containsKey(topic) || !this.__eskepk.get(topic).containsKey(usage))
         return rv;
       int i = 0;
-      for (byte[] pk : pks) {
-        rv[i] = jasodium.crypto_scalarmult_curve25519(this.__eskepk.get(topic).get(usage)[0],pk);
+      for (KEMPublicKey pk : pks) {
+        rv[i] = this.__eskepk.get(topic).get(usage).complete_kem(pk);
         i++;
       }
       if (clear)
@@ -117,6 +118,11 @@ public class CryptoKey
   public byte[] unwrap_opaque(byte[] opaque)
   {
     return jasodium.crypto_secretbox_open_auto(opaque,this.__ek);
+  }
+
+  public boolean use_legacy()
+  {
+    return this.__use_legacy;
   }
 
   private void __init_cryptokey(String file)
