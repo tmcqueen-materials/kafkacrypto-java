@@ -14,6 +14,7 @@ import org.kafkacrypto.msgs.TopicsPoison;
 import org.kafkacrypto.msgs.UsagesPoison;
 import org.kafkacrypto.msgs.PathlenPoison;
 import org.kafkacrypto.msgs.msgpack;
+import org.kafkacrypto.types.ByteArrayWrapper;
 import org.kafkacrypto.exceptions.KafkaCryptoExchangeException;
 import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
 import org.msgpack.value.Value;
@@ -25,7 +26,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.kafkacrypto.types.ByteHashMap;
 
@@ -36,6 +39,8 @@ public class CryptoExchange
   protected Logger _logger;
   private int __maxage = 86400;
   private int __randombytes = 32;
+  private Map<String,ArrayList<ByteArrayWrapper>> __randoms = new HashMap<String,ArrayList<ByteArrayWrapper>>();
+  private Lock __randoms_lock = new ReentrantLock();
   private CryptoKey __cryptokey;
   private SignedChain __spk_chain = new SignedChain();
   private ChainCert __spk = null;
@@ -144,6 +149,15 @@ public class CryptoExchange
       List<Value> rnd = pk.getExtra(0).asArrayValue().list();
       byte[] msg = pk.getExtra(1).asRawValue().asByteArray();
       byte[] random0 = rnd.get(0).asRawValue().asByteArray();
+      this.__randoms_lock.lock();
+      try {
+        if (this.__randoms.containsKey(topic)) {
+          if (!this.__randoms.get(topic).contains(new ByteArrayWrapper(random0)))
+            return null;
+        }
+      } finally {
+        this.__randoms_lock.unlock();
+      }
       byte[] random1 = rnd.get(1).asRawValue().asByteArray();
       KEMPublicKey[] pks = new KEMPublicKey[pk.pk_array.length];
       for (int i = 0; i < pk.pk_array.length; i++)
@@ -159,6 +173,12 @@ public class CryptoExchange
           for (int i = 0; i < rvs.size(); i += 2)
             rv.put(rvs.get(i).asRawValue().asByteArray(), rvs.get(i+1).asRawValue().asByteArray());
           this.__cryptokey.use_epk(topic, "decrypt_keys", new KEMPublicKey[0], true);
+          this.__randoms_lock.lock();
+          try {
+            this.__randoms.get(topic).remove(new ByteArrayWrapper(random0));
+          } finally {
+            this.__randoms_lock.unlock();
+          }
           return rv;
         } catch (Throwable t) {
           this._logger.debug("Failure to decrypt keys", t);
@@ -183,6 +203,14 @@ public class CryptoExchange
     SignPublicKey[] epks = new SignPublicKey[1];
     epks[0] = epk;
     byte[] random0 = jasodium.randombytes(this.__randombytes);
+    this.__randoms_lock.lock();
+    try {
+      if (!this.__randoms.containsKey(topic))
+        this.__randoms.put(topic, new ArrayList<ByteArrayWrapper>());
+      this.__randoms.get(topic).add(new ByteArrayWrapper(random0));
+    } finally {
+      this.__randoms_lock.unlock();
+    }
     ChainCert cc = new ChainCert();
     cc.poisons.add(new TopicsPoison(topic));
     cc.poisons.add(new UsagesPoison("key-encrypt-request", "key-encrypt-subscribe"));

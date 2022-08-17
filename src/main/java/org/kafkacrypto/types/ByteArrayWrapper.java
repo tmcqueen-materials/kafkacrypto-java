@@ -2,7 +2,7 @@ package org.kafkacrypto.types;
 
 import java.util.Arrays;
 
-class ByteArrayWrapper {
+public class ByteArrayWrapper {
   protected final byte[] data;
 
   public ByteArrayWrapper(byte[] data)
