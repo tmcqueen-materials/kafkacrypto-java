@@ -354,6 +354,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
           this._parent._cur_pgens.put(root, ek);
           this._parent._pgens.ensureContains(root);
           this._parent._pgens.get(root).put(ek.keyIndex, ek);
+          this._parent._pgens_updated = true;
         } else
           ek = this._parent._cur_pgens.get(root);
         KeyGenerator gen = (this._key)?(ek.keygen):(ek.valgen);
