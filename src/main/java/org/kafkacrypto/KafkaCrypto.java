@@ -309,7 +309,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
           }
           CryptoState oldkeys = new CryptoState();
           oldkeys.put("pgens", this._pgens);
-          this._cryptostore.store_opaque_value("oldkeys",msgpack.packb(oldkeys),"crypto");
+          this._cryptostore.store_opaque_value("oldkeys","crypto",msgpack.packb(oldkeys));
           this._pgens_updated = false;
         }
       } catch (Throwable e) {

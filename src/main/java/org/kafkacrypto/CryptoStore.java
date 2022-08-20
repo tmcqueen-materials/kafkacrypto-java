@@ -304,18 +304,18 @@ class CryptoStore
     return rv;
   }
 
-  public void store_opaque_value(String name, byte[] value, String section) throws KafkaCryptoException
+  public void store_opaque_value(String name, String section, byte[] value) throws KafkaCryptoException
   {
-    this.store_opaque_value(new ByteString(name), new ByteString(value), new ByteString(section));
+    this.store_opaque_value(new ByteString(name), new ByteString(section), new ByteString(value));
   }
 
-  public void store_opaque_value(ByteString name, ByteString value, ByteString section) throws KafkaCryptoException
+  public void store_opaque_value(ByteString name, ByteString section, ByteString value) throws KafkaCryptoException
   {
     this._logger.debug("Storing opaque value for name={}, section={}", name, section);
     this.keylock.lock();
     try {
       value = new ByteString(this.cryptokey.wrap_opaque(value.getBytes()));
-      this.store_value(name, value, section);
+      this.store_value(name, section, value);
       this._logger.debug("  Successfully stored opaque value for name={}, section={}", name, section);
     } finally {
       this.keylock.unlock();
