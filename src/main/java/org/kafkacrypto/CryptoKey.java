@@ -137,7 +137,7 @@ public class CryptoKey
     ckff.version = 1;
     ckff.use_legacy = true;
     ckff.versions = new ArrayList<Byte>();
-    ckff.versions.add(new Byte((byte)1));
+    ckff.versions.add(Byte.valueOf((byte)1));
     try {
       Files.write(Paths.get(file), msgpack.packb(ckff));
     } catch (IOException ioe) {

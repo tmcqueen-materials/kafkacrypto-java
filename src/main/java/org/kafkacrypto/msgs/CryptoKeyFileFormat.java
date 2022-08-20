@@ -28,7 +28,7 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
       this.version = 1;
       this.use_legacy = true;
       this.versions = new ArrayList<Byte>();
-      this.versions.add(new Byte((byte)1));
+      this.versions.add(Byte.valueOf((byte)1));
       this.ssk = src.get(0).asRawValue().asByteArray();
       this.ek = src.get(1).asRawValue().asByteArray();
     } else {
@@ -39,7 +39,7 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
       List<Value> vers = src.get(4).asArrayValue().list();
       this.versions = new ArrayList<Byte>();
       for (int i = 0; i < vers.size(); i++)
-        this.versions.add(new Byte(vers.get(i).asIntegerValue().asByte()));
+        this.versions.add(Byte.valueOf(vers.get(i).asIntegerValue().asByte()));
     }
     return this;
   }
