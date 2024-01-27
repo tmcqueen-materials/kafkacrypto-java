@@ -187,7 +187,7 @@
     <dependency>
       <groupId>org.msgpack</groupId>
       <artifactId>msgpack-core</artifactId>
-      <version>0.8.18</version>
+      <version>0.9.8</version>
     </dependency>
     <dependency>
       <groupId>org.abstractj.kalium</groupId>
@@ -202,12 +202,12 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.29</version>
+      <version>1.7.36</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>1.7.29</version>
+      <version>1.7.36</version>
     </dependency>
   </dependencies>
 </project>
