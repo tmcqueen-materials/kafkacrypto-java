@@ -54,11 +54,11 @@ This code is available on [Maven Central](https://search.maven.org/artifact/org.
     <dependency>
       <groupId>org.kafkacrypto</groupId>
       <artifactId>kafkacrypto-java</artifactId>
-      <version>0.9.9.12</version> <!-- change to latest version for best performance -->
+      <version>0.9.10.2</version> <!-- change to latest version for best performance -->
     </dependency>
 ```
 
-To automatically include kafkacrypto-java in your build processes. Version numbers are kept in synch with the [python](https://github.com/tmcqueen-materials/kafkacrypto) implementation. The latest kafkacrypo-java version is 0.9.9.12; kafkacrypto python versions 0.9.9.13-0.9.9.16 do not involve any changes affecting the java implementation.
+To automatically include kafkacrypto-java in your build processes. Version numbers are kept in synch with the [python](https://github.com/tmcqueen-materials/kafkacrypto) implementation. The latest kafkacrypo-java version is 0.9.10.2; kafkacrypto python version 0.9.10.3 does not involve any changes affecting the java implementation.
 
 ## Undecryptable Messages
 kafkacrypto is designed so that messages being sent can **always** be encrypted once a KafkaCrypto object is successfully created. However, it is possible for a consumer to receive a message for which it does not have a decryption key, i.e. an undecryptable message. This is most often because the asynchronous key exchange process has not completed before the message is received, or because the consumer is not authorized to receive on that topic. 
