@@ -1,6 +1,5 @@
 package org.kafkacrypto;
 
-import org.kafkacrypto.msgs.SignPublicKey;
 import org.kafkacrypto.msgs.RatchetFileFormat;
 import org.kafkacrypto.msgs.EncryptionKey;
 import org.kafkacrypto.msgs.msgpack;
@@ -109,14 +108,13 @@ public class Ratchet extends KeyGenerator
     }
   }
 
-  public EncryptionKey get_key_value_generators(String topic, SignPublicKey node) throws KafkaCryptoException
+  public EncryptionKey get_key_value_generators(String topic, byte[] nodebytes) throws KafkaCryptoException
   {
     EncryptionKey rv = new EncryptionKey();
     byte[][] hashparts = Utils.splitArray(jasodium.crypto_hash_sha256(topic.getBytes()),this.SALTSIZE);
     byte[][] kn = this.generate(hashparts[0],hashparts[1],this.SECRETSIZE,0);
     rv.root = topic;
-    if (node != null) {
-      byte[] nodebytes = node.getBytes();
+    if (nodebytes != null) {
       byte[] ki = this.__keyidx.toByteArray();
       byte[] nki = new byte[16+nodebytes.length];
       for (int i = 0; i < ki.length; i++)

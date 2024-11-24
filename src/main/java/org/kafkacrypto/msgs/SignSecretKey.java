@@ -15,24 +15,37 @@ import java.io.IOException;
 
 import java.util.Arrays;
 
-public class SignPublicKey implements Msgpacker<SignPublicKey>
+public class SignSecretKey implements Msgpacker<SignSecretKey>
 {
   protected byte version;
   protected byte[] key;
-  protected byte[] key2;
+  protected Signature key2;
 
-  public SignPublicKey()
+  public SignSecretKey()
   {
     this.version = 0;
   }
 
-  public SignPublicKey(byte[] inp)
+  public SignSecretKey(byte ver)
+  {
+    if (ver == 1)
+      this.version = 1;
+      this.key = jasodium.crypto_sign_keypair()[1];
+    if (ver == 4) {
+      this.version = 4;
+      this.key = jasodium.crypto_sign_keypair()[1];
+      this.key2 = new Signature("SPHINCS+-SHAKE-128f-simple");
+      this.key2.generate_keypair();
+    }
+  }
+
+  public SignSecretKey(byte[] inp)
   {
     this.version = 1;
     this.key = inp;
   }
 
-  public SignPublicKey(List<Value> src)
+  public SignSecretKey(List<Value> src)
   {
     this.version = src.get(0).asIntegerValue().asByte();
     if (this.version == 1) {
@@ -40,49 +53,36 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     } else {
       List<Value> keys = (List<Value>)src.get(1).asArrayValue();
       this.key = keys.get(0).asRawValue().asByteArray();
-      this.key2 = keys.get(1).asRawValue().asByteArray();
+      if (this.version == 4)
+        this.key2 = new Signature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
     }
   }
 
-  public SignPublicKey(KEMPublicKey kpk)
+  public SignSecretKey(SignSecretKey ssk)
   {
-    this.version = kpk.version;
-    this.key = kpk.key;
-    this.key2 = kpk.key2;
+    this.version = ssk.version;
+    this.key = ssk.key;
+    this.key2 = ssk.key2;
   }
 
-  public SignPublicKey(SignSecretKey ssk)
-  {
-    if (ssk.version == 1) {
-      this.version = ssk.version;
-      this.key = jasodium.crypto_sign_sk_to_pk(ssk.key);
-    } else {
-      this.version = ssk.version;
-      this.key = jasodium.crypto_sign_sk_to_pk(ssk.key);
-      if (ssk.version == 4)
-        this.key2 = ssk.key2.export_public_key();
-    }
-  }
-
-  public SignPublicKey unpackb(List<Value> src) throws IOException
+  public SignSecretKey unpackb(List<Value> src) throws IOException
   {
     // This is new style (aka list of version,keys pairs)
     if (src == null || src.size() < 2)
       return null;
     this.version = src.get(0).asIntegerValue().asByte();
-    if (this.version != 1 && this.version != 4)
-      return null;
     if (this.version == 1) {
       this.key = src.get(1).asRawValue().asByteArray();
     } else {
       List<Value> keys = (List<Value>)src.get(1).asArrayValue();
       this.key = keys.get(0).asRawValue().asByteArray();
-      this.key2 = keys.get(1).asRawValue().asByteArray();
+      if (this.version == 4)
+        this.key2 = new Signature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
     }
     return this;
   }
 
-  public SignPublicKey unpackb(byte[] src) throws IOException
+  public SignSecretKey unpackb(byte[] src) throws IOException
   {
     // this is old style (aka byte array public key)
     this.version = 1;
@@ -99,23 +99,23 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
       msgpack.packb_recurse(packer, this.version);
       packer.packArrayHeader(2);
       msgpack.packb_recurse(packer, this.key);
-      msgpack.packb_recurse(packer, this.key2);
+      msgpack.packb_recurse(packer, this.key2.export_secret_key());
     }
   }
 
   public boolean equals(Object obj)
   {
-    SignPublicKey spk = (SignPublicKey)obj;
-    if (this.version == spk.version) {
+    SignSecretKey ssk = (SignSecretKey)obj;
+    if (this.version == ssk.version) {
       switch (this.version) {
         case 1:
-          if (Arrays.equals(this.key,spk.key)) return true;
+          if (Arrays.equals(this.key,ssk.key)) return true;
           break;
         case 2:
         case 3:
         case 5:
         case 6:
-          if (Arrays.equals(this.key,spk.key) && Arrays.equals(this.key2,spk.key2)) return true;
+          if (Arrays.equals(this.key,ssk.key) && Arrays.equals(this.key2.export_secret_key(),ssk.key2.export_secret_key())) return true;
           break;
         default:
           return false;
@@ -129,14 +129,14 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
   {
     StringBuilder sb = new StringBuilder();
     sb.append("[");
-    sb.append(String.format("SignPublicKey-%d", this.version));
+    sb.append(String.format("SignSecretKey-%d", this.version));
     if (this.version > 0) {
       sb.append(", ");
       sb.append(Utils.bytesToHex(this.key));
     }
     if (this.version > 1) {
       sb.append(", ");
-      sb.append(Utils.bytesToHex(this.key2));
+      sb.append(Utils.bytesToHex(this.key2.export_secret_key()));
     }
     sb.append("]");
     return sb.toString();
@@ -155,20 +155,20 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     return null;
   }
 
-  public byte getType() {
-    return this.version;
-  }
-
-  public byte[] crypto_sign_open(byte[] inp)
+  public byte[] crypto_sign(byte[] inp)
   {
     if (this.version == 1)
-      return jasodium.crypto_sign_open(inp, this.key);
+      return jasodium.crypto_sign(inp, this.key);
     if (this.version == 4) {
-      byte[][] sigmsg = Utils.splitArray(inp, 17088);
-      byte[] dsctx = { 0, 0 };
-      if ((new Signature("SPHINCS+-SHAKE-128f-simple")).verify(Utils.concatArrays(dsctx,sigmsg[1]), sigmsg[0], this.key2))
-        return jasodium.crypto_sign_open(sigmsg[1], this.key);
+      byte[] edmsg = jasodium.crypto_sign(inp, this.key);
+      byte[] dsctx = {0,0};
+      byte[] sig = this.key2.sign(Utils.concatArrays(dsctx,edmsg));
+      return Utils.concatArrays(sig,edmsg);
     }
     return null;
+  }
+
+  public byte getType() {
+    return this.version;
   }
 }

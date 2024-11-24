@@ -179,7 +179,9 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
                 }
                 if (sendki.size() > 0) {
                   byte[] ski = msgpack.packb(sendki), sk = msgpack.packb(sendk);
-                  this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_KEYS"), ski, this._cryptoexchange.encrypt_keys(sendki,sendk,root,msg.value())));
+                  List<byte[]> emsgs = this._cryptoexchange.encrypt_keys(sendki,sendk,root,msg.value());
+                  for (byte[] emsg : emsgs)
+                    this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_KEYS"), ski, emsg));
                 }
               }
             } else if (msg.topic().endsWith(this._config.getProperty("TOPIC_SUFFIX_KEYS"))) {
@@ -194,10 +196,12 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
                     this._cgens.get(root).get(ki).setKey(newkeys.get(ki));
                 }
             } else if (msg.topic().equals(this._config.getProperty("MGMT_TOPIC_CHAINS"))) {
-              if (this._cryptokey.get_spk().equals(msg.key())) {
-                SignedChain sc = this._cryptoexchange.replace_spk_chain(new SignedChain().unpackb(msg.value()));
-                if (sc != null)
-                  this._cryptostore.store_value("chain","crypto",msgpack.packb(sc));
+              for (int idx = 0; idx < this._cryptokey.get_num_spk(); idx++) {
+                if (this._cryptokey.get_spk(idx).equals(msg.key())) {
+                  SignedChain sc = this._cryptoexchange.replace_spk_chain(new SignedChain().unpackb(msg.value()));
+                  if (sc != null)
+                    this._cryptostore.store_value("chain"+Byte.toString((byte)idx),"chains",msgpack.packb(sc));
+                }
               }
             } else if (msg.topic().equals(this._config.getProperty("MGMT_TOPIC_ALLOWLIST"))) {
               ChainCert cc = this._cryptoexchange.add_allowlist(new SignedChain().unpackb(msg.value()));
@@ -252,11 +256,12 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
             }
           if (needed.size() > 0) {
             byte[] needmsg = msgpack.packb(needed);
-            byte[][] needrequests = this._cryptoexchange.signed_epk(root);
-            for (byte[] needrequest : needrequests) {
+            List<byte[]> needrequests = this._cryptoexchange.signed_epks(root);
+            for (int i = 0; i < needrequests.size(); i++) {
+              byte[] needrequest = needrequests.get(i);
               if (needmsg != null && needrequest != null) {
                 this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_SUBS"), needmsg, needrequest));
-                if (this._cryptoexchange.direct_request_spk_chain()) {
+                if (this._cryptoexchange.direct_request_spk_chain(i)) {
                   // If it may succeed, send directly as well
                   this._kp.send(new ProducerRecord<byte[],byte[]>(root + this._config.getProperty("TOPIC_SUFFIX_REQS"), needmsg, needrequest));
                 }
@@ -350,7 +355,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
       try {
         EncryptionKey ek;
         if (!this._parent._cur_pgens.containsKey(root)) {
-          ek = this._parent._seed.get_key_value_generators(root, this._parent._cryptokey.get_spk());
+          ek = this._parent._seed.get_key_value_generators(root, this._parent._cryptokey.get_id_spk());
           this._parent._cur_pgens.put(root, ek);
           this._parent._pgens.ensureContains(root);
           this._parent._pgens.get(root).put(ek.keyIndex, ek);
