@@ -65,10 +65,19 @@ class KafkaCryptoBase
         this._cryptostore.store_value("cryptokey", "", "file#" + (String)cryptokey);
       }
     }
+    String rawkeytypes = this._cryptostore.load_value("keytypes",null,(String)"");
+    List<Byte> keytypes = new ArrayList<Byte>();
+    if (rawkeytypes.length() > 0) {
+      String[] parts = rawkeytypes.split(",");
+      for (String part : parts)
+        keytypes.add(Byte.valueOf(part));
+    }
     if (CryptoKey.class.isAssignableFrom(cryptokey.getClass()))
       this._cryptokey = (CryptoKey)cryptokey;
     else
-      this._cryptokey = new CryptoKey((String)cryptokey);
+      this._cryptokey = new CryptoKey((String)cryptokey, keytypes);
+    if (keytypes.size() > 0)
+      this._cryptokey.limit_spk(keytypes);
     this._cryptostore.set_cryptokey(this._cryptokey);
 
     Map<ByteString,ByteString> allow = this._cryptostore.load_section("allowlist",false);
@@ -86,9 +95,19 @@ class KafkaCryptoBase
         denylist.add(new ChainCert().unpackb(bs.getBytes()));
     }
 
-    SignedChain chain = new SignedChain().unpackb(this._cryptostore.load_value("chain","crypto",new byte[0]));
+    byte[] chain = this._cryptostore.load_value("chain","crypto",new byte[0]);
+    if (chain != null && chain.length > 0) {
+      // Migrate to new format
+      this._cryptostore.store_value("chain0","chains",chain);
+      this._cryptostore.store_value("chain","crypto",(ByteString)null);
+    }
+    Map<ByteString,ByteString> rawchains = this._cryptostore.load_section("chains",false);
+    List<SignedChain> chains = new ArrayList<SignedChain>();
+    if (rawchains != null)
+     for (ByteString bs : rawchains.values())
+       chains.add(new SignedChain().unpackb(bs.getBytes()));
     int max_age = (int)(this._cryptostore.load_value("maxage","crypto",0));
-    this._cryptoexchange = new CryptoExchange(chain, this._cryptokey, allowlist, denylist, max_age);
+    this._cryptoexchange = new CryptoExchange(chains, this._cryptokey, allowlist, denylist, max_age);
     this._lock = new ReentrantLock();
     this._kp = kp;
     this._kc = kc;

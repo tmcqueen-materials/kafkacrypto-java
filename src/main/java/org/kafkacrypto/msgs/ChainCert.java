@@ -1,6 +1,7 @@
 package org.kafkacrypto.msgs;
 
 import org.kafkacrypto.msgs.SignPublicKey;
+import org.kafkacrypto.msgs.KEMPublicKey;
 import org.kafkacrypto.msgs.CertPoisons;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.Msgpacker;
@@ -20,8 +21,9 @@ public class ChainCert implements Msgpacker<ChainCert>
 {
   public double max_age = 0;
   public CertPoisons poisons;
+  public SignPublicKey parentpk = null;
   public SignPublicKey pk = null;
-  public SignPublicKey[] pk_array = null;
+  public List<KEMPublicKey> pk_array = null;
   public List<Value> extra;
 
   public ChainCert()
@@ -44,34 +46,40 @@ public class ChainCert implements Msgpacker<ChainCert>
       if (vals.get(0).isIntegerValue()) {
         // case 2
         this.pk = new SignPublicKey().unpackb(vals);
-      } else { // cases 1 and 3
-        this.pk_array = new SignPublicKey[vals.size()];
-        int j = 0;
-        for (int i = 0; i < vals.size(); i++)
-          if (vals.get(i).isArrayValue()) {
-            SignPublicKey next = new SignPublicKey().unpackb(vals.get(i).asArrayValue().list());
-            if (next != null && next.version > 0) {
-              this.pk_array[j] = next;
-              j++;
-            }
-          } else {
-            SignPublicKey next = new SignPublicKey(vals.get(i).asRawValue().asByteArray());
-            if (next != null && next.version > 0) {
-              this.pk_array[j] = next;
-              j++;
-            }
-          }
-        if (j < this.pk_array.length) {
-          SignPublicKey[] new_pk_array = new SignPublicKey[j];
-          for (int i = 0; i < j; i++)
-            new_pk_array[i] = this.pk_array[i];
-          this.pk_array = new_pk_array;
+        if (this.pk == null || this.pk.getType() == 1) {
+          this.pk_array = new ArrayList<KEMPublicKey>();
+          this.pk_array.add(new KEMPublicKey().unpackb(vals));
         }
-        if (this.pk_array.length > 0)
-          this.pk = this.pk_array[0];
+      } else { // cases 1 and 3
+        if (vals.size() > 1) { // This will be KEM keys
+          this.pk_array = new ArrayList<KEMPublicKey>();
+          for (Value val : vals) {
+            KEMPublicKey next = null;
+            if (val.isArrayValue())
+              next = new KEMPublicKey().unpackb(val.asArrayValue().list());
+            else
+              next = new KEMPublicKey().unpackb(val.asRawValue().asByteArray());
+            if (next != null && next.getType() > 0)
+              this.pk_array.add(next);
+          }
+        } else { // This will be a signing key or a KEM key
+          if (vals.get(0).isArrayValue())
+            this.pk = new SignPublicKey().unpackb(vals.get(0).asArrayValue().list());
+          else
+            this.pk = new SignPublicKey().unpackb(vals.get(0).asRawValue().asByteArray());
+          if (this.pk == null || this.pk.getType() == 1) {
+            this.pk_array = new ArrayList<KEMPublicKey>();
+            if (vals.get(0).isArrayValue())
+              this.pk_array.add(new KEMPublicKey().unpackb(vals.get(0).asArrayValue().list()));
+            else
+              this.pk_array.add(new KEMPublicKey().unpackb(vals.get(0).asRawValue().asByteArray()));
+          }
+        }
       }
     } else {
       this.pk = new SignPublicKey(src.get(2).asRawValue().asByteArray());
+      this.pk_array = new ArrayList<KEMPublicKey>();
+      this.pk_array.add(new KEMPublicKey(this.pk));
     }
     this.extra = new ArrayList<Value>();
     for (int i = 3; i < src.size(); i++)
@@ -121,9 +129,9 @@ public class ChainCert implements Msgpacker<ChainCert>
       sb.append(this.pk.toString());
     } else {
       sb.append("[");
-      for (int i = 0; i < this.pk_array.length; i++) {
+      for (int i = 0; i < this.pk_array.size(); i++) {
         if (i > 0) sb.append(", ");
-        sb.append(this.pk_array[i].toString());
+        sb.append(this.pk_array.get(i).toString());
       }
       sb.append("]");
     }

@@ -1,6 +1,7 @@
 package org.kafkacrypto.msgs;
 
 import org.kafkacrypto.Utils;
+import org.kafkacrypto.msgs.SignSecretKey;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.Msgpacker;
 
@@ -13,11 +14,11 @@ import java.io.IOException;
 
 public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
 {
-  public byte version;
-  public byte[] ssk;
-  public byte[] ek;
+  public byte version = 2;
+  public List<SignSecretKey> ssk = new ArrayList<SignSecretKey>();
+  public byte[] ek = null;
   public boolean use_legacy;
-  public List<Byte> versions;
+  public List<Byte> versions = new ArrayList<Byte>();
   public boolean needs_update = false;
 
   public CryptoKeyFileFormat unpackb(List<Value> src)
@@ -25,21 +26,31 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
     if (src.size() == 2) {
       // Unversioned legacy format, so update
       this.needs_update = true;
-      this.version = 1;
+      this.version = 2;
       this.use_legacy = true;
-      this.versions = new ArrayList<Byte>();
       this.versions.add(Byte.valueOf((byte)1));
-      this.ssk = src.get(0).asRawValue().asByteArray();
+      this.ssk.add(new SignSecretKey(src.get(0).asRawValue().asByteArray()));
       this.ek = src.get(1).asRawValue().asByteArray();
     } else {
       this.version = src.get(0).asIntegerValue().asByte();
-      this.ssk = src.get(1).asRawValue().asByteArray();
       this.ek = src.get(2).asRawValue().asByteArray();
       this.use_legacy = src.get(3).asBooleanValue().getBoolean();
       List<Value> vers = src.get(4).asArrayValue().list();
-      this.versions = new ArrayList<Byte>();
       for (int i = 0; i < vers.size(); i++)
         this.versions.add(Byte.valueOf(vers.get(i).asIntegerValue().asByte()));
+      if (this.version == 1) {
+        this.version = 2;
+        this.ssk.add(new SignSecretKey(src.get(1).asRawValue().asByteArray()));
+        this.needs_update = true;
+      } else {
+        List<Value> sks = src.get(1).asArrayValue().list();
+        for (int i = 0; i < sks.size(); i++) {
+          if (sks.get(i).isArrayValue())
+            this.ssk.add(new SignSecretKey(sks.get(i).asArrayValue().list()));
+          else
+            this.ssk.add(new SignSecretKey(sks.get(i).asRawValue().asByteArray()));
+        }
+      }
     }
     return this;
   }
@@ -48,7 +59,9 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
   {
     packer.packArrayHeader(5);
     msgpack.packb_recurse(packer, this.version);
-    msgpack.packb_recurse(packer, this.ssk);
+    packer.packArrayHeader(this.ssk.size());
+    for (int i = 0; i < this.ssk.size(); i++)
+      msgpack.packb_recurse(packer, (Msgpacker<SignSecretKey>)this.ssk.get(i));
     msgpack.packb_recurse(packer, this.ek);
     msgpack.packb_recurse(packer, this.use_legacy);
     msgpack.packb_recurse(packer, this.versions);
@@ -58,9 +71,12 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
   {
     StringBuilder sb = new StringBuilder();
     sb.append("CKFF: [");
-    sb.append(this.version + ", ");
-    sb.append(Utils.bytesToHex(this.ssk));
-    sb.append(", ");
+    sb.append(this.version + ", [");
+    for (int i = 0; i < this.ssk.size(); i++) {
+      if (i > 0) sb.append(", ");
+      sb.append(this.ssk.get(i).toString());
+    }
+    sb.append("], ");
     sb.append(Utils.bytesToHex(this.ek));
     sb.append(", " + this.use_legacy);
     sb.append(", " + this.versions);
