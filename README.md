@@ -127,5 +127,6 @@ kcs.store_value("value1", "", "value-of-value1");
 kcs.store_value("value2", "", "value-of-value2");
 ```
 ## Post Quantum Secure Cryptography
-Currently, the java version of kafkacrypto does not support post quantum secure cryptography. This is due to limitations of liboqs-java support across platforms.
+The latest Maven-released version does not support pq cryptography due to limitations in cross-platform support of (liboqs-java)[https://github.com/open-quantum-safe/liboqs-java]. However, the current
+tip has support for PQ cryptography for testing purposes.
 
