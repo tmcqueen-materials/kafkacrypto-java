@@ -12,6 +12,7 @@ import org.openquantumsafe.KeyEncapsulation;
 import org.openquantumsafe.Pair;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Arrays;
 import org.msgpack.value.Value;
 
@@ -49,20 +50,24 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
     }
   }
 
-  public KEMSecretKey(byte[] inp)
+  public KEMSecretKey(byte[] inp) throws IOException
   {
-    this.version = 1;
-    this.key = inp;
+    this.unpackb(inp);
   }
 
   public KEMSecretKey(List<Value> src)
+  {
+    this.__from_list(src);
+  }
+
+  private void __from_list(List<Value> src)
   {
     // This is new style (aka list of version,keys pairs)
     this.version = src.get(0).asIntegerValue().asByte();
     if (this.version == 1) {
       this.key = src.get(1).asRawValue().asByteArray();
     } else {
-      List<Value> keys = (List<Value>)src.get(1).asArrayValue();
+      List<Value> keys = src.get(1).asArrayValue().list();
       this.key = keys.get(0).asRawValue().asByteArray();
       if (this.version == 3 || this.version == 6)
         this.key3 = keys.get(2).asRawValue().asByteArray();
@@ -119,27 +124,19 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
     // This is new style (aka list of version,keys pairs)
     if (src == null || src.size() < 2)
       return null;
-    this.version = src.get(0).asIntegerValue().asByte();
-    if (this.version == 1) {
-      this.key = src.get(1).asRawValue().asByteArray();
-    } else {
-      List<Value> keys = (List<Value>)src.get(1).asArrayValue();
-      this.key = keys.get(0).asRawValue().asByteArray();
-      if (this.version == 3 || this.version == 6)
-        this.key3 = keys.get(2).asRawValue().asByteArray();
-      if (this.version == 2 || this.version == 3)
-        this.key2 = new KeyEncapsulation("sntrup761", keys.get(1).asRawValue().asByteArray());
-      if (this.version == 5 || this.version == 6)
-        this.key2 = new KeyEncapsulation("ML-KEM-1024", keys.get(1).asRawValue().asByteArray());
-    }
+    this.__from_list(src);
     return this;
   }
 
   public KEMSecretKey unpackb(byte[] src) throws IOException
   {
-    // this is old style (aka byte array public key)
-    this.version = 1;
-    this.key = src;
+    if (src.length == 32) {
+      // this is old style (aka byte array public key)
+      this.version = 1;
+      this.key = src;
+    } else {
+      this.__from_list(msgpack.unpackb(src));
+    }
     return this;
   }
 
@@ -148,18 +145,22 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
     if (this.version == 1) {
       msgpack.packb_recurse(packer, this.key);
     } else if (this.version == 2 || this.version == 5) {
-      packer.packArrayHeader(2);
-      msgpack.packb_recurse(packer, this.version);
-      packer.packArrayHeader(2);
-      msgpack.packb_recurse(packer, this.key);
-      msgpack.packb_recurse(packer, this.key2.export_secret_key());
+      List<Object> tp = new ArrayList<Object>();
+      List<Object> kp = new ArrayList<Object>();
+      kp.add(this.key);
+      kp.add(this.key2.export_secret_key());
+      tp.add(this.version);
+      tp.add(kp);
+      msgpack.packb_recurse(packer, msgpack.packb(tp));
     } else if (this.version == 3 || this.version == 6) {
-      packer.packArrayHeader(2);
-      msgpack.packb_recurse(packer, this.version);
-      packer.packArrayHeader(3);
-      msgpack.packb_recurse(packer, this.key);
-      msgpack.packb_recurse(packer, this.key2.export_secret_key());
-      msgpack.packb_recurse(packer, this.key3);
+      List<Object> tp = new ArrayList<Object>();
+      List<Object> kp = new ArrayList<Object>();
+      kp.add(this.key);
+      kp.add(this.key2.export_secret_key());
+      kp.add(this.key3);
+      tp.add(this.version);
+      tp.add(kp);
+      msgpack.packb_recurse(packer, msgpack.packb(tp));
     }
   }
 

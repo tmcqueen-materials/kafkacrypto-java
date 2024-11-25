@@ -42,12 +42,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
 
   public SignSecretKey(byte[] inp) throws IOException
   {
-    if (inp.length == 64) {
-      this.version = 1;
-      this.key = inp;
-    } else {
-      this.__from_list(msgpack.unpackb(inp));
-    }
+    this.unpackb(inp);
   }
 
   public SignSecretKey(List<Value> src)
@@ -80,23 +75,18 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
     // This is new style (aka list of version,keys pairs)
     if (src == null || src.size() < 2)
       return null;
-    this.version = src.get(0).asIntegerValue().asByte();
-    if (this.version == 1) {
-      this.key = src.get(1).asRawValue().asByteArray();
-    } else {
-      List<Value> keys = (List<Value>)src.get(1).asArrayValue();
-      this.key = keys.get(0).asRawValue().asByteArray();
-      if (this.version == 4)
-        this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
-    }
+    this.__from_list(src);
     return this;
   }
 
   public SignSecretKey unpackb(byte[] src) throws IOException
   {
-    // this is old style (aka byte array public key)
-    this.version = 1;
-    this.key = src;
+    if (src.length == 64) {
+      this.version = 1;
+      this.key = src;
+    } else {
+      this.__from_list(msgpack.unpackb(src));
+    }
     return this;
   }
 

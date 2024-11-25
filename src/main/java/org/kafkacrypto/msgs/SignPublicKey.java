@@ -8,6 +8,7 @@ import org.kafkacrypto.Utils;
 import org.kafkacrypto.jasodium;
 
 import java.util.List;
+import java.util.ArrayList;
 import org.msgpack.value.Value;
 
 import org.msgpack.core.MessagePacker;
@@ -26,19 +27,23 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     this.version = 0;
   }
 
-  public SignPublicKey(byte[] inp)
+  public SignPublicKey(byte[] inp) throws IOException
   {
-    this.version = 1;
-    this.key = inp;
+    this.unpackb(inp);
   }
 
   public SignPublicKey(List<Value> src)
+  {
+    this.__from_list(src);
+  }
+
+  private void __from_list(List<Value> src)
   {
     this.version = src.get(0).asIntegerValue().asByte();
     if (this.version == 1) {
       this.key = src.get(1).asRawValue().asByteArray();
     } else {
-      List<Value> keys = (List<Value>)src.get(1).asArrayValue();
+      List<Value> keys = src.get(1).asArrayValue().list();
       this.key = keys.get(0).asRawValue().asByteArray();
       this.key2 = keys.get(1).asRawValue().asByteArray();
     }
@@ -69,24 +74,19 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     // This is new style (aka list of version,keys pairs)
     if (src == null || src.size() < 2)
       return null;
-    this.version = src.get(0).asIntegerValue().asByte();
-    if (this.version != 1 && this.version != 4)
-      return null;
-    if (this.version == 1) {
-      this.key = src.get(1).asRawValue().asByteArray();
-    } else {
-      List<Value> keys = src.get(1).asArrayValue().list();
-      this.key = keys.get(0).asRawValue().asByteArray();
-      this.key2 = keys.get(1).asRawValue().asByteArray();
-    }
+    this.__from_list(src);
     return this;
   }
 
   public SignPublicKey unpackb(byte[] src) throws IOException
   {
-    // this is old style (aka byte array public key)
-    this.version = 1;
-    this.key = src;
+    if (src.length == 32) {
+      // this is old style (aka byte array public key)
+      this.version = 1;
+      this.key = src;
+    } else {
+      this.__from_list(msgpack.unpackb(src));
+    }
     return this;
   }
 
@@ -95,11 +95,13 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     if (this.version == 1) {
       msgpack.packb_recurse(packer, this.key);
     } else {
-      packer.packArrayHeader(2);
-      msgpack.packb_recurse(packer, this.version);
-      packer.packArrayHeader(2);
-      msgpack.packb_recurse(packer, this.key);
-      msgpack.packb_recurse(packer, this.key2);
+      List<Object> tp = new ArrayList<Object>();
+      List<Object> kp = new ArrayList<Object>();
+      kp.add(this.key);
+      kp.add(this.key2);
+      tp.add(this.version);
+      tp.add(kp);
+      msgpack.packb_recurse(packer, msgpack.packb(tp));
     }
   }
 

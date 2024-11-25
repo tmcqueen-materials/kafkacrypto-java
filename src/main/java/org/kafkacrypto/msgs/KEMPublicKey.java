@@ -11,6 +11,7 @@ import org.openquantumsafe.KeyEncapsulation;
 import org.openquantumsafe.Pair;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Arrays;
 import org.msgpack.value.Value;
 
@@ -28,20 +29,24 @@ public class KEMPublicKey implements Msgpacker<KEMPublicKey>
     this.version = 0;
   }
 
-  public KEMPublicKey(byte[] inp)
+  public KEMPublicKey(byte[] inp) throws IOException
   {
-    this.version = 1;
-    this.key = inp;
+    this.unpackb(inp);
   }
 
   public KEMPublicKey(List<Value> src)
+  {
+    this.__from_list(src);
+  }
+
+  private void __from_list(List<Value> src)
   {
     // This is new style (aka list of version,keys pairs)
     this.version = src.get(0).asIntegerValue().asByte();
     if (this.version == 1) {
       this.key = src.get(1).asRawValue().asByteArray();
     } else {
-      List<Value> keys = (List<Value>)src.get(1).asArrayValue();
+      List<Value> keys = src.get(1).asArrayValue().list();
       this.key = keys.get(0).asRawValue().asByteArray();
       this.key2 = keys.get(1).asRawValue().asByteArray();
     }
@@ -83,24 +88,19 @@ public class KEMPublicKey implements Msgpacker<KEMPublicKey>
     // This is new style (aka list of version,keys pairs)
     if (src == null || src.size() < 2)
       return null;
-    this.version = src.get(0).asIntegerValue().asByte();
-    if (this.version != 1 && this.version != 2 && this.version != 3 && this.version != 5 && this.version != 6)
-      return null;
-    if (this.version == 1) {
-      this.key = src.get(1).asRawValue().asByteArray();
-    } else {
-      List<Value> keys = (List<Value>)src.get(1).asArrayValue();
-      this.key = keys.get(0).asRawValue().asByteArray();
-      this.key2 = keys.get(1).asRawValue().asByteArray();
-    }
+    this.__from_list(src);
     return this;
   }
 
   public KEMPublicKey unpackb(byte[] src) throws IOException
   {
-    // this is old style (aka byte array public key)
-    this.version = 1;
-    this.key = src;
+    if (src.length == 32) {
+      // this is old style (aka byte array public key)
+      this.version = 1;
+      this.key = src;
+    } else {
+      this.__from_list(msgpack.unpackb(src));
+    }
     return this;
   }
 
