@@ -8,7 +8,6 @@ import org.kafkacrypto.Utils;
 import org.kafkacrypto.jasodium;
 
 import java.util.List;
-import java.util.ArrayList;
 import org.msgpack.value.Value;
 
 import org.msgpack.core.MessagePacker;
@@ -95,13 +94,11 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
     if (this.version == 1) {
       msgpack.packb_recurse(packer, this.key);
     } else {
-      List<Object> tp = new ArrayList<Object>();
-      List<Object> kp = new ArrayList<Object>();
-      kp.add(this.key);
-      kp.add(this.key2.export_secret_key());
-      tp.add(this.version);
-      tp.add(kp);
-      msgpack.packb_recurse(packer, msgpack.packb(tp));
+      packer.packArrayHeader(2);
+      msgpack.packb_recurse(packer, this.version);
+      packer.packArrayHeader(2);
+      msgpack.packb_recurse(packer, this.key);
+      msgpack.packb_recurse(packer, this.key2.export_secret_key());
     }
   }
 

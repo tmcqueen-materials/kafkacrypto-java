@@ -11,7 +11,6 @@ import org.openquantumsafe.KeyEncapsulation;
 import org.openquantumsafe.Pair;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 import org.msgpack.value.Value;
 

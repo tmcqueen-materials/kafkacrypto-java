@@ -58,7 +58,10 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
     msgpack.packb_recurse(packer, this.version);
     packer.packArrayHeader(this.ssk.size());
     for (int i = 0; i < this.ssk.size(); i++)
-      msgpack.packb_recurse(packer, this.ssk.get(i));
+      if (this.ssk.get(i).getType() == 1)
+        msgpack.packb_recurse(packer, this.ssk.get(i));
+      else
+        msgpack.packb_recurse(packer, msgpack.packb(this.ssk.get(i)));
     msgpack.packb_recurse(packer, this.ek);
     msgpack.packb_recurse(packer, this.use_legacy);
     msgpack.packb_recurse(packer, this.versions);

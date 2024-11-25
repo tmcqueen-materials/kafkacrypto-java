@@ -12,7 +12,6 @@ import org.openquantumsafe.KeyEncapsulation;
 import org.openquantumsafe.Pair;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 import org.msgpack.value.Value;
 
@@ -145,22 +144,18 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
     if (this.version == 1) {
       msgpack.packb_recurse(packer, this.key);
     } else if (this.version == 2 || this.version == 5) {
-      List<Object> tp = new ArrayList<Object>();
-      List<Object> kp = new ArrayList<Object>();
-      kp.add(this.key);
-      kp.add(this.key2.export_secret_key());
-      tp.add(this.version);
-      tp.add(kp);
-      msgpack.packb_recurse(packer, msgpack.packb(tp));
+      packer.packArrayHeader(2);
+      msgpack.packb_recurse(packer, this.version);
+      packer.packArrayHeader(2);
+      msgpack.packb_recurse(packer, this.key);
+      msgpack.packb_recurse(packer, this.key2.export_secret_key());
     } else if (this.version == 3 || this.version == 6) {
-      List<Object> tp = new ArrayList<Object>();
-      List<Object> kp = new ArrayList<Object>();
-      kp.add(this.key);
-      kp.add(this.key2.export_secret_key());
-      kp.add(this.key3);
-      tp.add(this.version);
-      tp.add(kp);
-      msgpack.packb_recurse(packer, msgpack.packb(tp));
+      packer.packArrayHeader(2);
+      msgpack.packb_recurse(packer, this.version);
+      packer.packArrayHeader(3);
+      msgpack.packb_recurse(packer, this.key);
+      msgpack.packb_recurse(packer, this.key2.export_secret_key());
+      msgpack.packb_recurse(packer, this.key3);
     }
   }
 
