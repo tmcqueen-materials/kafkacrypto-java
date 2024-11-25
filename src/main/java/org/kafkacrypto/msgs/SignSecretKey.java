@@ -2,12 +2,13 @@ package org.kafkacrypto.msgs;
 
 import org.kafkacrypto.msgs.Msgpacker;
 import org.kafkacrypto.msgs.msgpack;
+import org.kafkacrypto.msgs.PQSignature;
 
 import org.kafkacrypto.Utils;
 import org.kafkacrypto.jasodium;
-import org.openquantumsafe.Signature;
 
 import java.util.List;
+import java.util.ArrayList;
 import org.msgpack.value.Value;
 
 import org.msgpack.core.MessagePacker;
@@ -19,7 +20,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
 {
   protected byte version;
   protected byte[] key;
-  protected Signature key2;
+  protected PQSignature key2;
 
   public SignSecretKey()
   {
@@ -34,27 +35,36 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
     if (ver == 4) {
       this.version = 4;
       this.key = jasodium.crypto_sign_keypair()[1];
-      this.key2 = new Signature("SPHINCS+-SHAKE-128f-simple");
+      this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple");
       this.key2.generate_keypair();
     }
   }
 
-  public SignSecretKey(byte[] inp)
+  public SignSecretKey(byte[] inp) throws IOException
   {
-    this.version = 1;
-    this.key = inp;
+    if (inp.length == 64) {
+      this.version = 1;
+      this.key = inp;
+    } else {
+      this.__from_list(msgpack.unpackb(inp));
+    }
   }
 
   public SignSecretKey(List<Value> src)
+  {
+    this.__from_list(src);
+  }
+
+  private void __from_list(List<Value> src)
   {
     this.version = src.get(0).asIntegerValue().asByte();
     if (this.version == 1) {
       this.key = src.get(1).asRawValue().asByteArray();
     } else {
-      List<Value> keys = (List<Value>)src.get(1).asArrayValue();
+      List<Value> keys = src.get(1).asArrayValue().list();
       this.key = keys.get(0).asRawValue().asByteArray();
       if (this.version == 4)
-        this.key2 = new Signature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
+        this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
     }
   }
 
@@ -77,7 +87,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
       List<Value> keys = (List<Value>)src.get(1).asArrayValue();
       this.key = keys.get(0).asRawValue().asByteArray();
       if (this.version == 4)
-        this.key2 = new Signature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
+        this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
     }
     return this;
   }
@@ -95,11 +105,13 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
     if (this.version == 1) {
       msgpack.packb_recurse(packer, this.key);
     } else {
-      packer.packArrayHeader(2);
-      msgpack.packb_recurse(packer, this.version);
-      packer.packArrayHeader(2);
-      msgpack.packb_recurse(packer, this.key);
-      msgpack.packb_recurse(packer, this.key2.export_secret_key());
+      List<Object> tp = new ArrayList<Object>();
+      List<Object> kp = new ArrayList<Object>();
+      kp.add(this.key);
+      kp.add(this.key2.export_secret_key());
+      tp.add(this.version);
+      tp.add(kp);
+      msgpack.packb_recurse(packer, msgpack.packb(tp));
     }
   }
 
@@ -111,10 +123,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
         case 1:
           if (Arrays.equals(this.key,ssk.key)) return true;
           break;
-        case 2:
-        case 3:
-        case 5:
-        case 6:
+        case 4:
           if (Arrays.equals(this.key,ssk.key) && Arrays.equals(this.key2.export_secret_key(),ssk.key2.export_secret_key())) return true;
           break;
         default:

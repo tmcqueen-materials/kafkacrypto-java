@@ -213,8 +213,6 @@
       <groupId>org.openquantumsafe</groupId>
       <artifactId>liboqs-java</artifactId>
       <version>1.0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/liboqs-java/target/liboqs-java.jar</systemPath>
     </dependency>
   </dependencies>
 </project>

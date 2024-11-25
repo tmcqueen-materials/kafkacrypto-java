@@ -2,10 +2,10 @@ package org.kafkacrypto.msgs;
 
 import org.kafkacrypto.msgs.Msgpacker;
 import org.kafkacrypto.msgs.msgpack;
+import org.kafkacrypto.msgs.PQSignature;
 
 import org.kafkacrypto.Utils;
 import org.kafkacrypto.jasodium;
-import org.openquantumsafe.Signature;
 
 import java.util.List;
 import org.msgpack.value.Value;
@@ -75,7 +75,7 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     if (this.version == 1) {
       this.key = src.get(1).asRawValue().asByteArray();
     } else {
-      List<Value> keys = (List<Value>)src.get(1).asArrayValue();
+      List<Value> keys = src.get(1).asArrayValue().list();
       this.key = keys.get(0).asRawValue().asByteArray();
       this.key2 = keys.get(1).asRawValue().asByteArray();
     }
@@ -111,10 +111,7 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
         case 1:
           if (Arrays.equals(this.key,spk.key)) return true;
           break;
-        case 2:
-        case 3:
-        case 5:
-        case 6:
+        case 4:
           if (Arrays.equals(this.key,spk.key) && Arrays.equals(this.key2,spk.key2)) return true;
           break;
         default:
@@ -166,7 +163,7 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     if (this.version == 4) {
       byte[][] sigmsg = Utils.splitArray(inp, 17088);
       byte[] dsctx = { 0, 0 };
-      if ((new Signature("SPHINCS+-SHAKE-128f-simple")).verify(Utils.concatArrays(dsctx,sigmsg[1]), sigmsg[0], this.key2))
+      if ((new PQSignature("SPHINCS+-SHAKE-128f-simple")).verify(Utils.concatArrays(dsctx,sigmsg[1]), sigmsg[0], this.key2))
         return jasodium.crypto_sign_open(sigmsg[1], this.key);
     }
     return null;

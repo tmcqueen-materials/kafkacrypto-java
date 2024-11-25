@@ -21,7 +21,7 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
   public List<Byte> versions = new ArrayList<Byte>();
   public boolean needs_update = false;
 
-  public CryptoKeyFileFormat unpackb(List<Value> src)
+  public CryptoKeyFileFormat unpackb(List<Value> src) throws IOException
   {
     if (src.size() == 2) {
       // Unversioned legacy format, so update
@@ -45,10 +45,7 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
       } else {
         List<Value> sks = src.get(1).asArrayValue().list();
         for (int i = 0; i < sks.size(); i++) {
-          if (sks.get(i).isArrayValue())
-            this.ssk.add(new SignSecretKey(sks.get(i).asArrayValue().list()));
-          else
-            this.ssk.add(new SignSecretKey(sks.get(i).asRawValue().asByteArray()));
+          this.ssk.add(new SignSecretKey(sks.get(i).asRawValue().asByteArray()));
         }
       }
     }
@@ -61,7 +58,7 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
     msgpack.packb_recurse(packer, this.version);
     packer.packArrayHeader(this.ssk.size());
     for (int i = 0; i < this.ssk.size(); i++)
-      msgpack.packb_recurse(packer, (Msgpacker<SignSecretKey>)this.ssk.get(i));
+      msgpack.packb_recurse(packer, this.ssk.get(i));
     msgpack.packb_recurse(packer, this.ek);
     msgpack.packb_recurse(packer, this.use_legacy);
     msgpack.packb_recurse(packer, this.versions);
