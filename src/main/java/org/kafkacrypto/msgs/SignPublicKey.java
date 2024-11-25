@@ -3,6 +3,7 @@ package org.kafkacrypto.msgs;
 import org.kafkacrypto.msgs.Msgpacker;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.PQSignature;
+import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
 
 import org.kafkacrypto.Utils;
 import org.kafkacrypto.jasodium;
@@ -41,10 +42,12 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     this.version = src.get(0).asIntegerValue().asByte();
     if (this.version == 1) {
       this.key = src.get(1).asRawValue().asByteArray();
-    } else {
+    } else if (this.version == 4) {
       List<Value> keys = src.get(1).asArrayValue().list();
       this.key = keys.get(0).asRawValue().asByteArray();
       this.key2 = keys.get(1).asRawValue().asByteArray();
+    } else {
+      throw new KafkaCryptoInternalError("Not a valid SignPublicKey version!");
     }
   }
 

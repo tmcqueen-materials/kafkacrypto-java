@@ -5,6 +5,7 @@ import org.kafkacrypto.msgs.KEMPublicKey;
 import org.kafkacrypto.msgs.CertPoisons;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.Msgpacker;
+import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
 
 import org.kafkacrypto.Utils;
 
@@ -45,7 +46,11 @@ public class ChainCert implements Msgpacker<ChainCert>
       List<Value> vals = src.get(2).asArrayValue().list();
       if (vals.get(0).isIntegerValue()) {
         // case 2
-        this.pk = new SignPublicKey().unpackb(vals);
+        try {
+          this.pk = new SignPublicKey().unpackb(vals);
+        } catch (KafkaCryptoInternalError kcie) {
+          this.pk = null;
+        }
         if (this.pk == null || this.pk.getType() == 1) {
           this.pk_array = new ArrayList<KEMPublicKey>();
           this.pk_array.add(new KEMPublicKey().unpackb(vals));
@@ -63,10 +68,14 @@ public class ChainCert implements Msgpacker<ChainCert>
               this.pk_array.add(next);
           }
         } else { // This will be a signing key or a KEM key
-          if (vals.get(0).isArrayValue())
-            this.pk = new SignPublicKey().unpackb(vals.get(0).asArrayValue().list());
-          else
-            this.pk = new SignPublicKey().unpackb(vals.get(0).asRawValue().asByteArray());
+          try {
+            if (vals.get(0).isArrayValue())
+              this.pk = new SignPublicKey().unpackb(vals.get(0).asArrayValue().list());
+            else
+              this.pk = new SignPublicKey().unpackb(vals.get(0).asRawValue().asByteArray());
+          } catch (KafkaCryptoInternalError kcie) {
+            this.pk = null;
+          }
           if (this.pk == null || this.pk.getType() == 1) {
             this.pk_array = new ArrayList<KEMPublicKey>();
             if (vals.get(0).isArrayValue())
