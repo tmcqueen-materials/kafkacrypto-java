@@ -104,6 +104,7 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
 
   public boolean equals(Object obj)
   {
+    if (obj == null) return false;
     SignPublicKey spk = (SignPublicKey)obj;
     if (this.version == spk.version) {
       switch (this.version) {

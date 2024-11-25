@@ -104,6 +104,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
 
   public boolean equals(Object obj)
   {
+    if (obj == null) return false;
     SignSecretKey ssk = (SignSecretKey)obj;
     if (this.version == ssk.version) {
       switch (this.version) {

@@ -118,6 +118,7 @@ public class KEMPublicKey implements Msgpacker<KEMPublicKey>
 
   public boolean equals(Object obj)
   {
+    if (obj == null) return false;
     KEMPublicKey kpk = (KEMPublicKey)obj;
     if (this.version == kpk.version) {
       switch (this.version) {

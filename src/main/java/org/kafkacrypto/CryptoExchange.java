@@ -86,8 +86,11 @@ public class CryptoExchange
     this.__allowdenylist_lock.lock();
     try {
       ChainCert pk = (new SignedChain().unpackb(msgval)).process_chain(topic,"key-encrypt-request",this.__allowlist,this.__denylist);
-      List<KEMPublicKey> epks = this.__cryptokey.get_epks(topic, "encrypt_keys");
+      this.__cryptokey.get_epks(topic, "encrypt_keys");
       Map<byte[],KEMPublicKey> eks = this.__cryptokey.use_epks(topic, "encrypt_keys", pk.pk_array, true);
+      List<KEMPublicKey> epks = new ArrayList<KEMPublicKey>();
+      for (KEMPublicKey tmppk : eks.values())
+        epks.add(tmppk);
       byte[] ek = eks.keySet().iterator().next(); // use first common KEM key
       byte[] random0 = pk.getExtra(0).asRawValue().asByteArray();
       byte[] random1 = jasodium.randombytes(this.__randombytes);
@@ -355,7 +358,13 @@ public class CryptoExchange
       return null;
     this.__allowdenylist_lock.lock();
     try {
-      ChainCert new_spk = chain.process_chain(null, null, this.__allowlist, this.__denylist);
+      ChainCert new_spk = null;
+      try {
+        new_spk = chain.process_chain(null, null, this.__allowlist, this.__denylist);
+      } catch (KafkaCryptoInternalError kcie) {
+        this._logger.warn("__update_spk_chain internal error", kcie);
+        new_spk = null;
+      }
       if (new_spk == null)
         return null;
       this.__spk_lock.lock();

@@ -161,6 +161,7 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
 
   public boolean equals(Object obj)
   {
+    if (obj == null) return false;
     KEMSecretKey ksk = (KEMSecretKey)obj;
     if (this.version == ksk.version) {
       switch (this.version) {

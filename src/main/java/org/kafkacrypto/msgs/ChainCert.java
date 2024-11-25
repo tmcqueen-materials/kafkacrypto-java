@@ -167,7 +167,7 @@ public class ChainCert implements Msgpacker<ChainCert>
   {
     if (wanted == null || choices == null) return null;
     for (ChainCert c : choices)
-      if (wanted.pk.equals(c.pk))
+      if (c.pk.equals(wanted.pk))
         return c;
     return null;
   }
