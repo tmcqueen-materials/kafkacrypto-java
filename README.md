@@ -1,5 +1,5 @@
 # kafkacrypto-java
-End-to-End (End2End) Message Layer Encryption for Kafka
+End-to-End (E2EE) Message Layer Encryption for Kafka
 
 This is a Java implementation of the encryption layer [kafkacrypto](https://github.com/tmcqueen-materials/kafkacrypto).
 
@@ -127,6 +127,13 @@ kcs.store_value("value1", "", "value-of-value1");
 kcs.store_value("value2", "", "value-of-value2");
 ```
 ## Post Quantum Secure Cryptography
-The latest Maven-released version does not support pq cryptography due to limitations in cross-platform support of [liboqs-java](https://github.com/open-quantum-safe/liboqs-java). However, the current
-tip has support for PQ cryptography for testing purposes.
-
+Support exists as of v0.9.11.0, with the same structure and caveats as for the python version of [kafkacrypto](https://github.com/tmcqueen-materials/kafkacrypto). Additionally,
+the java version requires availability of the [liboqs-java](https://github.com/open-quantum-safe/liboqs-java) dependency. This has
+some cross-platform challenges. It can be installed using Maven by doing:
+1. `git clone https://github.com/open-quantum-safe/liboqs-java.git`
+2. `cd liboqs-java`
+3. Make sure JAVA_HOME is set.
+4. `mvn compile`
+5. `mvn package`
+6. There will be a file `./target/liboqs-java.jar` that should be added to the java classpath.
+7. For packaging as a dependency as part of a larger project, it can be installed in your local maven repository with: `mvn install:install-file -Dfile=./target/liboqs-java.jar -DgroupId=org.openquantumsafe -DartifactId=liboqs-java -Dversion=1.0 -Dpackaging=jar`
