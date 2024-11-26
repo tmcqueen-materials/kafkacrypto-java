@@ -158,8 +158,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
       return jasodium.crypto_sign(inp, this.key);
     if (this.version == 4) {
       byte[] edmsg = jasodium.crypto_sign(inp, this.key);
-      byte[] dsctx = {0,0};
-      byte[] sig = this.key2.sign(Utils.concatArrays(dsctx,edmsg));
+      byte[] sig = this.key2.sign(edmsg);
       return Utils.concatArrays(sig,edmsg);
     }
     return null;
