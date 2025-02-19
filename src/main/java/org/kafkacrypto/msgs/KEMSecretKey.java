@@ -45,7 +45,7 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
       try {
         this.key2 = new KeyEncapsulation("sntrup761");
       } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
-        throw new KafkaCryptoUnsupportedError("sntrup761 not supported!");
+        throw new KafkaCryptoUnsupportedError("sntrup761 not supported!", e);
       }
       this.key2.generate_keypair();
     }
@@ -55,7 +55,7 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
       try {
         this.key2 = new KeyEncapsulation("ML-KEM-1024");
       } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
-        throw new KafkaCryptoUnsupportedError("ML-KEM-1024 not supported!");
+        throw new KafkaCryptoUnsupportedError("ML-KEM-1024 not supported!", e);
       }
       this.key2.generate_keypair();
     }
@@ -86,13 +86,13 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
         try {
           this.key2 = new KeyEncapsulation("sntrup761", keys.get(1).asRawValue().asByteArray());
         } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
-          throw new KafkaCryptoUnsupportedError("sntrup761 not supported!");
+          throw new KafkaCryptoUnsupportedError("sntrup761 not supported!", e);
         }
       if (this.version == 5 || this.version == 6)
         try {
           this.key2 = new KeyEncapsulation("ML-KEM-1024", keys.get(1).asRawValue().asByteArray());
         } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
-          throw new KafkaCryptoUnsupportedError("ML-KEM-1024 not supported!");
+          throw new KafkaCryptoUnsupportedError("ML-KEM-1024 not supported!", e);
         }
     }
   }

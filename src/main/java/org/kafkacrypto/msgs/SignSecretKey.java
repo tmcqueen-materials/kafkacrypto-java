@@ -42,7 +42,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
       try {
         this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple");
       } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
-        throw new KafkaCryptoUnsupportedError("ML-SLH-DSA not supported!");
+        throw new KafkaCryptoUnsupportedError("SLH-DSA not supported!", e);
       }
       this.key2.generate_keypair();
     }
@@ -70,7 +70,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
         try {
           this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
         } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
-          throw new KafkaCryptoUnsupportedError("ML-SLH-DSA not supported!");
+          throw new KafkaCryptoUnsupportedError("SLH-DSA not supported!", e);
         }
     }
   }
