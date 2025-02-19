@@ -213,7 +213,9 @@ public class CryptoKey
     _logger.warn("Initializing new CryptoKey file {}", file);
     CryptoKeyFileFormat ckff = new CryptoKeyFileFormat();
     ckff.ek = jasodium.randombytes(jasodium.CRYPTO_SECRETBOX_KEYBYTES);
-    ckff.use_legacy = true;
+    ckff.use_legacy = false;
+    ckff.versions.add(Byte.valueOf((byte)5));
+    ckff.versions.add(Byte.valueOf((byte)2));
     ckff.versions.add(Byte.valueOf((byte)1));
     try {
       Files.write(Paths.get(file), msgpack.packb(ckff));
