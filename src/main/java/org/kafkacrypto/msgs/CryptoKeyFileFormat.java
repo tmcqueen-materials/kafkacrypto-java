@@ -5,6 +5,9 @@ import org.kafkacrypto.msgs.SignSecretKey;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.Msgpacker;
 
+import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
+import org.kafkacrypto.exceptions.KafkaCryptoUnsupportedError;
+
 import org.msgpack.core.MessagePacker;
 import java.util.List;
 import java.util.ArrayList;
@@ -20,6 +23,7 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
   public boolean use_legacy;
   public List<Byte> versions = new ArrayList<Byte>();
   public boolean needs_update = false;
+  public boolean needs_update_poison = false;
 
   public CryptoKeyFileFormat unpackb(List<Value> src) throws IOException
   {
@@ -37,7 +41,15 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
       this.use_legacy = src.get(3).asBooleanValue().getBoolean();
       List<Value> vers = src.get(4).asArrayValue().list();
       for (int i = 0; i < vers.size(); i++)
-        this.versions.add(Byte.valueOf(vers.get(i).asIntegerValue().asByte()));
+        try {
+          KEMSecretKey ksktest = new KEMSecretKey(Byte.valueOf(vers.get(i).asIntegerValue().asByte()));
+          this.versions.add(Byte.valueOf(vers.get(i).asIntegerValue().asByte()));
+        } catch (KafkaCryptoUnsupportedError kcue) {
+          // ignore values that do not work.
+          this.needs_update_poison = true;
+        }
+      if (this.versions.size() == 0)
+        throw new KafkaCryptoInternalError("CryptoKey has no supported ephemeral key types!");
       if (this.version == 1) {
         this.version = 2;
         this.ssk.add(new SignSecretKey(src.get(1).asRawValue().asByteArray()));
@@ -45,8 +57,15 @@ public class CryptoKeyFileFormat implements Msgpacker<CryptoKeyFileFormat>
       } else {
         List<Value> sks = src.get(1).asArrayValue().list();
         for (int i = 0; i < sks.size(); i++) {
-          this.ssk.add(new SignSecretKey(sks.get(i).asRawValue().asByteArray()));
+          try {
+            this.ssk.add(new SignSecretKey(sks.get(i).asRawValue().asByteArray()));
+          } catch (KafkaCryptoUnsupportedError kcue) {
+            // ignore keys we do not understand
+            this.needs_update_poison = true;
+          }
         }
+        if (this.ssk.size() < 1)
+          throw new KafkaCryptoInternalError("CryptoKey has no supported secret key types!");
       }
     }
     return this;

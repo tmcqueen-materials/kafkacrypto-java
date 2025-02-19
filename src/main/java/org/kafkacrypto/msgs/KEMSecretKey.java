@@ -5,11 +5,15 @@ import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.SignPublicKey;
 import org.kafkacrypto.msgs.KEMPublicKey;
 
+import org.kafkacrypto.exceptions.KafkaCryptoUnsupportedError;
+
 import org.kafkacrypto.Utils;
 import org.kafkacrypto.jasodium;
 
 import org.openquantumsafe.KeyEncapsulation;
 import org.openquantumsafe.Pair;
+import org.openquantumsafe.MechanismNotEnabledError;
+import org.openquantumsafe.MechanismNotSupportedError;
 
 import java.util.List;
 import java.util.Arrays;
@@ -38,13 +42,21 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
     if (ver == 2) {
       this.version = 2;
       this.key = jasodium.randombytes(jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES);
-      this.key2 = new KeyEncapsulation("sntrup761");
+      try {
+        this.key2 = new KeyEncapsulation("sntrup761");
+      } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+        throw new KafkaCryptoUnsupportedError("sntrup761 not supported!");
+      }
       this.key2.generate_keypair();
     }
     if (ver == 5) {
       this.version = 5;
       this.key = jasodium.randombytes(jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES);
-      this.key2 = new KeyEncapsulation("ML-KEM-1024");
+      try {
+        this.key2 = new KeyEncapsulation("ML-KEM-1024");
+      } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+        throw new KafkaCryptoUnsupportedError("ML-KEM-1024 not supported!");
+      }
       this.key2.generate_keypair();
     }
   }
@@ -71,9 +83,17 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
       if (this.version == 3 || this.version == 6)
         this.key3 = keys.get(2).asRawValue().asByteArray();
       if (this.version == 2 || this.version == 3)
-        this.key2 = new KeyEncapsulation("sntrup761", keys.get(1).asRawValue().asByteArray());
+        try {
+          this.key2 = new KeyEncapsulation("sntrup761", keys.get(1).asRawValue().asByteArray());
+        } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+          throw new KafkaCryptoUnsupportedError("sntrup761 not supported!");
+        }
       if (this.version == 5 || this.version == 6)
-        this.key2 = new KeyEncapsulation("ML-KEM-1024", keys.get(1).asRawValue().asByteArray());
+        try {
+          this.key2 = new KeyEncapsulation("ML-KEM-1024", keys.get(1).asRawValue().asByteArray());
+        } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+          throw new KafkaCryptoUnsupportedError("ML-KEM-1024 not supported!");
+        }
     }
   }
 

@@ -7,8 +7,6 @@ import org.kafkacrypto.msgs.KEMSecretKey;
 
 import org.kafkacrypto.Utils;
 import org.kafkacrypto.jasodium;
-import org.openquantumsafe.KeyEncapsulation;
-import org.openquantumsafe.Pair;
 
 import java.util.List;
 import java.util.Arrays;

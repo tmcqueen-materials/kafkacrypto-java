@@ -4,8 +4,13 @@ import org.kafkacrypto.msgs.Msgpacker;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.PQSignature;
 
+import org.kafkacrypto.exceptions.KafkaCryptoUnsupportedError;
+
 import org.kafkacrypto.Utils;
 import org.kafkacrypto.jasodium;
+
+import org.openquantumsafe.MechanismNotEnabledError;
+import org.openquantumsafe.MechanismNotSupportedError;
 
 import java.util.List;
 import org.msgpack.value.Value;
@@ -34,7 +39,11 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
     if (ver == 4) {
       this.version = 4;
       this.key = jasodium.crypto_sign_keypair()[1];
-      this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple");
+      try {
+        this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple");
+      } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+        throw new KafkaCryptoUnsupportedError("ML-SLH-DSA not supported!");
+      }
       this.key2.generate_keypair();
     }
   }
@@ -58,7 +67,11 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
       List<Value> keys = src.get(1).asArrayValue().list();
       this.key = keys.get(0).asRawValue().asByteArray();
       if (this.version == 4)
-        this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
+        try {
+          this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
+        } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+          throw new KafkaCryptoUnsupportedError("ML-SLH-DSA not supported!");
+        }
     }
   }
 

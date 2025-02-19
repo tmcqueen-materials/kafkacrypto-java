@@ -88,11 +88,17 @@ public class CryptoKey
         _logger.warn("  Adding New Public Key: {}", spk.toString());
       }
       if (ckff.needs_update) {
-        _logger.warn("Updating CryptoKey file {}.", file);
-        try {
-          Files.write(Paths.get(file), msgpack.packb(ckff));
-        } catch (IOException ioe) {
-          _logger.warn("  Error updating file.",ioe);
+        if (!ckff.needs_update_poison) {
+          _logger.warn("Updating CryptoKey file {}.", file);
+          try {
+            Files.write(Paths.get(file), msgpack.packb(ckff));
+          } catch (IOException ioe) {
+            _logger.warn("  Error updating file.",ioe);
+            throw new KafkaCryptoKeyException("Could not update CryptoKey file!", ioe);
+          }
+        } else {
+          _logger.warn("CryptoKey file {} update required, but cannot update!", file);
+          throw new KafkaCryptoKeyException("Could not update CryptoKey file!");
         }
       }
     } catch (IOException ioe) {
