@@ -41,7 +41,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
       this.key = jasodium.crypto_sign_keypair()[1];
       try {
         this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple");
-      } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+      } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
         throw new KafkaCryptoUnsupportedError("ML-SLH-DSA not supported!");
       }
       this.key2.generate_keypair();
@@ -69,7 +69,7 @@ public class SignSecretKey implements Msgpacker<SignSecretKey>
       if (this.version == 4)
         try {
           this.key2 = new PQSignature("SPHINCS+-SHAKE-128f-simple", keys.get(1).asRawValue().asByteArray());
-        } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+        } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
           throw new KafkaCryptoUnsupportedError("ML-SLH-DSA not supported!");
         }
     }

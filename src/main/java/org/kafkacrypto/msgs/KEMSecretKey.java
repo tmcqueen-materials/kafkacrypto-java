@@ -44,7 +44,7 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
       this.key = jasodium.randombytes(jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES);
       try {
         this.key2 = new KeyEncapsulation("sntrup761");
-      } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+      } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
         throw new KafkaCryptoUnsupportedError("sntrup761 not supported!");
       }
       this.key2.generate_keypair();
@@ -54,7 +54,7 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
       this.key = jasodium.randombytes(jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES);
       try {
         this.key2 = new KeyEncapsulation("ML-KEM-1024");
-      } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+      } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
         throw new KafkaCryptoUnsupportedError("ML-KEM-1024 not supported!");
       }
       this.key2.generate_keypair();
@@ -85,13 +85,13 @@ public class KEMSecretKey implements Msgpacker<KEMSecretKey>
       if (this.version == 2 || this.version == 3)
         try {
           this.key2 = new KeyEncapsulation("sntrup761", keys.get(1).asRawValue().asByteArray());
-        } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+        } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
           throw new KafkaCryptoUnsupportedError("sntrup761 not supported!");
         }
       if (this.version == 5 || this.version == 6)
         try {
           this.key2 = new KeyEncapsulation("ML-KEM-1024", keys.get(1).asRawValue().asByteArray());
-        } catch (UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
+        } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
           throw new KafkaCryptoUnsupportedError("ML-KEM-1024 not supported!");
         }
     }
