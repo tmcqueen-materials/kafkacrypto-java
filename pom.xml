@@ -8,7 +8,7 @@
   <scm>
     <connection>scm:git:git://github.com/tmcqueen-materials/kafkacrypto-java.git</connection>
     <url>https://github.com/tmcqueen-materials/kafkacrypto-java</url>
-    <tag>v0.9.11.1</tag>
+    <tag>HEAD</tag>
   </scm>
   <distributionManagement>
     <snapshotRepository>
@@ -167,7 +167,7 @@
   <groupId>org.kafkacrypto</groupId>
   <artifactId>kafkacrypto-java</artifactId>
   <packaging>jar</packaging>
-  <version>0.9.11.1</version>
+  <version>0.9.11.2-SNAPSHOT</version>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Java port of kafkacrypto, a lightweight and cross-platform/cross-language encryption library for Apache Kafka.</description>
   <url>https://github.com/tmcqueen-materials/kafkacrypto-java</url>
