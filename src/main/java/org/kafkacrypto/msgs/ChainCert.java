@@ -155,9 +155,9 @@ public class ChainCert implements Msgpacker<ChainCert>
     return sb.toString();
   }
 
-  public boolean validate_time()
+  public boolean validate_time(double time)
   {
-    if (System.currentTimeMillis()/1000.0 <= this.max_age)
+    if (time <= this.max_age)
       return true;
     return false;
   }

@@ -76,6 +76,11 @@ public class SignedChain implements Msgpacker<SignedChain>
 
   public static ChainCert process_chain(List<byte[]> chain, String topic, String usage, List<ChainCert> allowed, List<ChainCert> denied)
   {
+    return SignedChain.process_chain(chain, topic, usage, allowed, denied, Utils.currentTime());
+  }
+
+  public static ChainCert process_chain(List<byte[]> chain, String topic, String usage, List<ChainCert> allowed, List<ChainCert> denied, double time)
+  {
     if (allowed.size() < 1) throw new KafkaCryptoInternalError("No roots of trust specified!");
     if (chain.size() < 1) throw new KafkaCryptoInternalError("Signed chain has no entries!");
     // See python process_chain for logic description.
@@ -98,7 +103,7 @@ public class SignedChain implements Msgpacker<SignedChain>
         if (ChainCert.key_in_list(lpk, denied) != null)
           denylisted = true;
         if (denylisted) throw new KafkaCryptoInternalError("Chain has denylisted key.");
-        if (!lpk.validate_time())
+        if (!lpk.validate_time(time))
           throw new KafkaCryptoInternalError("Chain is expired!");
         if (topic != null && !lpk.validate_poison("topics",topic))
           throw new KafkaCryptoInternalError("Chain does not match required topic.");
