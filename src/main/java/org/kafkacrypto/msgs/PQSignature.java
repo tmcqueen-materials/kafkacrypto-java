@@ -108,9 +108,6 @@ public class PQSignature extends Signature
     if (this.slh_dsa_shake_128f_support == SLH_DSA_IMPL.NONE) {
       throw new MechanismNotSupportedError("SLH_DSA_SHAKE_128F");
     } else if (this.slh_dsa_shake_128f_support == SLH_DSA_IMPL.SLH_DSA_PURE_SHAKE_128F) {
-      System.out.println("msg: " + Utils.bytesToHex(message));
-      System.out.println("sig: " + Utils.bytesToHex(signature));
-      System.out.println("pk: " + Utils.bytesToHex(public_key));
       return super.verify(message, signature, new byte[0], public_key);
     } else {
       // SPHINCS+-SHAKE-128F-simple implementation
