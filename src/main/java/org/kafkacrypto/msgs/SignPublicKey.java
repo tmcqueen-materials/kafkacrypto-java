@@ -169,7 +169,7 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     if (this.version == 4) {
       byte[][] sigmsg = Utils.splitArray(inp, 17088);
       try {
-        if ((new PQSignature("SPHINCS+-SHAKE-128f-simple")).verify(sigmsg[1], sigmsg[0], this.key2))
+        if ((new PQSignature("SLH_DSA_SHAKE_128F")).verify(sigmsg[1], sigmsg[0], this.key2))
           return jasodium.crypto_sign_open(sigmsg[1], this.key);
       } catch (NoClassDefFoundError | UnsatisfiedLinkError | MechanismNotSupportedError | MechanismNotEnabledError e) {
         return null; //unsupported

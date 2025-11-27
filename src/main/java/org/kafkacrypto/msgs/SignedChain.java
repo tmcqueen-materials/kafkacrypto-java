@@ -32,7 +32,10 @@ public class SignedChain implements Msgpacker<SignedChain>
   @SuppressWarnings("unchecked")
   public SignedChain(SignedChain src)
   {
-    this.chain = (ArrayList<byte[]>)(src.chain.clone());
+    if (src == null)
+      this.chain = new ArrayList<byte[]>();
+    else
+      this.chain = (ArrayList<byte[]>)(src.chain.clone());
   }
 
   public SignedChain unpackb(List<Value> src) throws IOException
@@ -89,7 +92,10 @@ public class SignedChain implements Msgpacker<SignedChain>
       boolean denylisted = false;
       try {
         for (byte[] next : chain) {
-          ChainCert npk = new ChainCert().unpackb(lpk.pk.crypto_sign_open(next));
+          byte[] cso = lpk.pk.crypto_sign_open(next);
+          if (cso == null)
+            throw new KafkaCryptoInternalError("Failed signature verification.");
+          ChainCert npk = new ChainCert().unpackb(cso);
           if (ChainCert.key_in_list(lpk, denied) != null) {
             denylisted = true;
           } else if (ChainCert.key_in_list(lpk, allowed) != null) {
