@@ -132,8 +132,9 @@ the java version requires availability of the [liboqs-java](https://github.com/o
 some cross-platform challenges. It can be installed using Maven by doing:
 1. `git clone https://github.com/open-quantum-safe/liboqs-java.git`
 2. `cd liboqs-java`
-3. Make sure JAVA_HOME is set.
-4. `mvn compile`
-5. `mvn package`
-6. There will be a file `./target/liboqs-java.jar` that should be added to the java classpath.
-7. For packaging as a dependency as part of a larger project, it can be installed in your local maven repository with: `mvn install:install-file -Dfile=./target/liboqs-java.jar -DgroupId=org.openquantumsafe -DartifactId=liboqs-java -Dversion=1.0 -Dpackaging=jar`
+3. `git checkout 0.3.0`
+4. Make sure JAVA_HOME is set.
+5. `mvn compile`
+6. `mvn package`
+7. There will be a file `./target/liboqs-java.jar` that should be added to the java classpath.
+8. For packaging as a dependency as part of a larger project, it can be installed in your local maven repository with: `mvn install:install-file -Dfile=./target/liboqs-java.jar -DgroupId=org.openquantumsafe -DartifactId=liboqs-java -Dversion=0.3 -Dpackaging=jar`
