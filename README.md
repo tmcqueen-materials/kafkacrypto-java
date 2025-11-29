@@ -54,11 +54,11 @@ This code is available on [Maven Central](https://search.maven.org/artifact/org.
     <dependency>
       <groupId>org.kafkacrypto</groupId>
       <artifactId>kafkacrypto-java</artifactId>
-      <version>0.9.11.1</version> <!-- change to latest version for best performance -->
+      <version>0.9.11.2</version> <!-- change to latest version for best performance -->
     </dependency>
 ```
 
-To automatically include kafkacrypto-java in your build processes. Version numbers are kept in synch with the [python](https://github.com/tmcqueen-materials/kafkacrypto) implementation. The latest kafkacrypo-java version is 0.9.11.1.
+To automatically include kafkacrypto-java in your build processes. Version numbers are kept in synch with the [python](https://github.com/tmcqueen-materials/kafkacrypto) implementation. The latest kafkacrypo-java version is 0.9.11.2.
 
 ## Undecryptable Messages
 kafkacrypto is designed so that messages being sent can **always** be encrypted once a KafkaCrypto object is successfully created. However, it is possible for a consumer to receive a message for which it does not have a decryption key, i.e. an undecryptable message. This is most often because the asynchronous key exchange process has not completed before the message is received, or because the consumer is not authorized to receive on that topic. 
@@ -130,6 +130,7 @@ kcs.store_value("value2", "", "value-of-value2");
 Support exists as of v0.9.11.0, with the same structure and caveats as for the python version of [kafkacrypto](https://github.com/tmcqueen-materials/kafkacrypto). Additionally,
 the java version requires availability of the [liboqs-java](https://github.com/open-quantum-safe/liboqs-java) dependency. This has
 some cross-platform challenges. It can be installed using Maven by doing:
+
 1. `git clone https://github.com/open-quantum-safe/liboqs-java.git`
 2. `cd liboqs-java`
 3. `git checkout 0.3.0`
@@ -138,3 +139,5 @@ some cross-platform challenges. It can be installed using Maven by doing:
 6. `mvn package`
 7. There will be a file `./target/liboqs-java.jar` that should be added to the java classpath.
 8. For packaging as a dependency as part of a larger project, it can be installed in your local maven repository with: `mvn install:install-file -Dfile=./target/liboqs-java.jar -DgroupId=org.openquantumsafe -DartifactId=liboqs-java -Dversion=0.3 -Dpackaging=jar`
+
+NOTE: A minimal `liboqs` build is `mkdir build && cd build && cmake -G"Ninja" .. -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DOQS_PERMIT_UNSUPPORTED_ARCHITECTURE=ON -DOQS_USE_OPENSSL=OFF -DOQS_MINIMAL_BUILD="KEM_ntruprime_sntrup761;SIG_sphincs_shake_128f_simple;KEM_ml_kem_512;KEM_ml_kem_768;KEM_ml_kem_1024;SIG_slh_dsa_pure_shake_128f;SIG_ml_dsa_44;SIG_ml_dsa_65;SIG_ml_dsa_87" && ninja install`. Instead of `ninja install` you can instead make sure Maven can find the requisite files by adding `-Dliboqs.include.dir=.../liboqs/build/include -Dliboqs.lib.dir=.../liboqs/build/lib` for `compile` and `package` commands above.
