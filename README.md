@@ -54,11 +54,11 @@ This code is available on [Maven Central](https://search.maven.org/artifact/org.
     <dependency>
       <groupId>org.kafkacrypto</groupId>
       <artifactId>kafkacrypto-java</artifactId>
-      <version>0.9.11.2</version> <!-- change to latest version for best performance -->
+      <version>0.9.11.3</version> <!-- change to latest version for best performance -->
     </dependency>
 ```
 
-To automatically include kafkacrypto-java in your build processes. Version numbers are kept in synch with the [python](https://github.com/tmcqueen-materials/kafkacrypto) implementation. The latest kafkacrypo-java version is 0.9.11.2.
+To automatically include kafkacrypto-java in your build processes. Version numbers are kept in synch with the [python](https://github.com/tmcqueen-materials/kafkacrypto) implementation. The latest kafkacrypo-java version is 0.9.11.3.
 
 ## Undecryptable Messages
 kafkacrypto is designed so that messages being sent can **always** be encrypted once a KafkaCrypto object is successfully created. However, it is possible for a consumer to receive a message for which it does not have a decryption key, i.e. an undecryptable message. This is most often because the asynchronous key exchange process has not completed before the message is received, or because the consumer is not authorized to receive on that topic. 
@@ -133,7 +133,7 @@ some cross-platform challenges. It can be installed using Maven by doing:
 
 1. `git clone https://github.com/open-quantum-safe/liboqs-java.git`
 2. `cd liboqs-java`
-3. `git checkout 0.3.0`
+3. `git checkout 0.15.0`
 4. Make sure JAVA_HOME is set.
 5. `mvn compile`
 6. `mvn package`
