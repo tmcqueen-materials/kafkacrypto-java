@@ -108,6 +108,12 @@ public class SignPublicKey implements Msgpacker<SignPublicKey>
     }
   }
 
+  public boolean equals(byte[] src) throws IOException
+  {
+    if (src == null) return false;
+    return this.equals(new SignPublicKey(src));
+  }
+
   public boolean equals(Object obj)
   {
     if (obj == null) return false;
