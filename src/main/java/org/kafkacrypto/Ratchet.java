@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,6 +139,7 @@ public class Ratchet extends KeyGenerator
     _logger.warn("  New ratchet initialized without key escrow.");
     rff.keyidx = BigInteger.valueOf(0);
     try {
+      Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
       Files.write(Paths.get(file), msgpack.packb(rff));
     } catch (IOException ioe) {
       _logger.warn("  Error writing file.",ioe);

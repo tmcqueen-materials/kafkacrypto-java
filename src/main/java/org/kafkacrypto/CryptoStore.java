@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -43,6 +44,7 @@ class CryptoStore
     this._logger = LoggerFactory.getLogger("kafkacrypto-java.cryptostore");
     if (!(new File(file).exists()) && nodeID != null && nodeID.length() > 0) {
       try {
+        Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
         Files.write(Paths.get(file), new byte[0]);
       } catch (IOException ioe) {
         this._logger.warn("  Error writing file.",ioe);

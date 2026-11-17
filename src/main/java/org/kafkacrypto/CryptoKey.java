@@ -13,6 +13,7 @@ import org.kafkacrypto.exceptions.KafkaCryptoKeyException;
 import java.io.File;
 import java.nio.file.Paths;
 import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermissions;
 
 import java.io.IOException;
 
@@ -218,6 +219,7 @@ public class CryptoKey
     ckff.versions.add(Byte.valueOf((byte)2));
     ckff.versions.add(Byte.valueOf((byte)1));
     try {
+      Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
       Files.write(Paths.get(file), msgpack.packb(ckff));
     } catch (IOException ioe) {
       _logger.warn("  Error writing file.",ioe);
