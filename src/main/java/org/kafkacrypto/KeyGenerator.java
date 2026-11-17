@@ -39,7 +39,7 @@ public class KeyGenerator
 
   public void rekey(byte[] secret) throws KafkaCryptoGeneratorException
   {
-    if ((secret.length != this.SECRETSIZE) || (this.__secret != null && !Arrays.equals(this.__secret, secret)))
+    if ((secret.length != this.SECRETSIZE) || (this.__secret != null && Arrays.equals(this.__secret, secret)))
       throw new KafkaCryptoGeneratorException("Secret is malformed!");
     this.__secret = secret;
     this.__salt = new byte[this.SALTSIZE];
