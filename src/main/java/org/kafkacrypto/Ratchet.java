@@ -135,15 +135,13 @@ public class Ratchet extends KeyGenerator
     _logger.warn("Initializing new Ratchet file {}", file);
     RatchetFileFormat rff = new RatchetFileFormat();
     rff.secret = jasodium.randombytes(Ratchet.SECRETSIZE);
-    byte[] _ss0_escrow = Utils.hexToBytes("7e301be3922d8166e30be93c9ecc2e18f71400fe9e6407fd744f4a542bcab934");
-    _logger.warn("  Escrow public key: {}", Utils.bytesToHex(_ss0_escrow));
-    _logger.warn("  Escrow value: {}", Utils.bytesToHex(jasodium.crypto_box_seal(rff.secret, _ss0_escrow)));
+    _logger.warn("  New ratchet initialized without key escrow.");
     rff.keyidx = BigInteger.valueOf(0);
     try {
       Files.write(Paths.get(file), msgpack.packb(rff));
     } catch (IOException ioe) {
       _logger.warn("  Error writing file.",ioe);
     }
-    _logger.warn("  Ratchet Initialized.");    
+    _logger.warn("  Ratchet Initialized.");
   }
 }
