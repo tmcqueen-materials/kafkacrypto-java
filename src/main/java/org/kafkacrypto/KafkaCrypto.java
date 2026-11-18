@@ -468,7 +468,11 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     public KafkaCryptoWireMessage decrypt(KafkaCryptoWireMessage msg)
     {
       if (msg.keyIndex.length < 1 || msg.keyIndex.length > Long.parseLong(this._parent._config.getProperty("MGMT_KEYINDEX_MAX_LEN"))) {
-        this._parent._logger.debug("Key index out of bounds");
+        this._parent._logger.debug("Key index length out of bounds");
+        return msg;
+      }
+      if (msg.salt.length < 1) {
+        this._parent._logger.debug("Salt length out of bounds");
         return msg;
       }
       try {
