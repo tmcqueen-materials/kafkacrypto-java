@@ -127,6 +127,9 @@ public class CryptoExchange
         this.__spk_lock.lock();
         try {
           SignedChain rv = new SignedChain(this.__spk_chains.get(idx));
+          if (rv.chain.size() == 0) {
+            this._logger.warn("Current signing chain is empty. You must provision access for this node for use.");
+          }
           rv.append(msg);
           msgs.add(msgpack.packb(rv));
         } catch (Throwable t) {
@@ -224,20 +227,7 @@ public class CryptoExchange
         try {
           SignedChain sc = new SignedChain(this.__spk_chains.get(idx));
           if (sc.chain.size() == 0) {
-            this.__spk_direct_requests.set(idx,true);
-            ChainCert tempcc = new ChainCert(), tempcc2 = new ChainCert();
-            tempcc.max_age = Utils.currentTime() + this.__maxage;
-            tempcc.poisons.add(new TopicsPoison(topic));
-            tempcc.poisons.add(new UsagesPoison("key-encrypt-request","key-encrypt-subscribe"));
-            tempcc.poisons.add(new PathlenPoison(1));
-            tempcc.pk = this.__cryptokey.get_spk(idx);
-            sc.append(jasodium.crypto_sign(msgpack.packb(tempcc), jasodium.crypto_sign_seed_keypair(Utils.hexToBytes("4c194f7de97c67626cc43fbdaf93dffbc4735352b37370072697d44254e1bc6c"))[1]));
-            SignedChain provision = new SignedChain();
-            tempcc2.max_age = 0;
-            tempcc2.pk = this.__cryptokey.get_spk(idx);
-            provision.append(msgpack.packb(tempcc2));
-            provision.append(this.__cryptokey.sign_spk(msgpack.packb(tempcc), idx));
-            this._logger.warn("Current signing chain is empty. Use {} to provision access and then remove temporary root of trust from allowedlist.", Utils.bytesToHex(msgpack.packb(provision)));
+            this._logger.warn("Current signing chain is empty. You must provision access for this node for use.");
           }
           sc.append(msg);
           rv.add(msgpack.packb(sc));
@@ -252,20 +242,7 @@ public class CryptoExchange
       try {
         SignedChain sc = new SignedChain(this.__spk_chains.get(idx));
         if (sc.chain.size() == 0) {
-          this.__spk_direct_requests.set(idx,true);
-          ChainCert tempcc = new ChainCert(), tempcc2 = new ChainCert();
-          tempcc.max_age = Utils.currentTime() + this.__maxage;
-          tempcc.poisons.add(new TopicsPoison(topic));
-          tempcc.poisons.add(new UsagesPoison("key-encrypt-request","key-encrypt-subscribe"));
-          tempcc.poisons.add(new PathlenPoison(1));
-          tempcc.pk = this.__cryptokey.get_spk(idx);
-          sc.append(jasodium.crypto_sign(msgpack.packb(tempcc), jasodium.crypto_sign_seed_keypair(Utils.hexToBytes("4c194f7de97c67626cc43fbdaf93dffbc4735352b37370072697d44254e1bc6c"))[1]));
-          SignedChain provision = new SignedChain();
-          tempcc2.max_age = 0;
-          tempcc2.pk = this.__cryptokey.get_spk(idx);
-          provision.append(msgpack.packb(tempcc2));
-          provision.append(this.__cryptokey.sign_spk(msgpack.packb(tempcc), idx));
-          this._logger.warn("Current signing chain is empty. Use {} to provision access and then remove temporary root of trust from allowedlist.", Utils.bytesToHex(msgpack.packb(provision)));
+          this._logger.warn("Current signing chain is empty. You must provision access for this node for use.");
         }
         sc.append(msg);
         rv.add(msgpack.packb(sc));
