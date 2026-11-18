@@ -134,10 +134,10 @@ some cross-platform challenges. It can be installed using Maven by doing:
 1. `git clone https://github.com/open-quantum-safe/liboqs-java.git`
 2. `cd liboqs-java`
 3. `git checkout 0.15.0`
-4. Make sure JAVA_HOME is set.
+4. Make sure JAVA_HOME is set. And that openssl development libraries are installed (e.g. `apt install libssl-dev` on Ubuntu)
 5. `mvn compile`
 6. `mvn package`
 7. There will be a file `./target/liboqs-java.jar` that should be added to the java classpath.
 8. For packaging as a dependency as part of a larger project, it can be installed in your local maven repository with: `mvn install:install-file -Dfile=./target/liboqs-java.jar -DgroupId=org.openquantumsafe -DartifactId=liboqs-java -Dversion=0.3 -Dpackaging=jar`
 
-NOTE: A minimal `liboqs` build is `mkdir build && cd build && cmake -G"Ninja" .. -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DOQS_PERMIT_UNSUPPORTED_ARCHITECTURE=ON -DOQS_USE_OPENSSL=OFF -DOQS_MINIMAL_BUILD="KEM_ntruprime_sntrup761;SIG_sphincs_shake_128f_simple;KEM_ml_kem_512;KEM_ml_kem_768;KEM_ml_kem_1024;SIG_slh_dsa_pure_shake_128f;SIG_ml_dsa_44;SIG_ml_dsa_65;SIG_ml_dsa_87" && ninja install`. Instead of `ninja install` you can instead make sure Maven can find the requisite files by adding `-Dliboqs.include.dir=.../liboqs/build/include -Dliboqs.lib.dir=.../liboqs/build/lib` for `compile` and `package` commands above.
+NOTE: A minimal `liboqs` build (both shared and static libraries) is `mkdir build && cd build && cmake -G"Ninja" .. -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DOQS_PERMIT_UNSUPPORTED_ARCHITECTURE=ON -DOQS_USE_OPENSSL=OFF -DOQS_MINIMAL_BUILD="KEM_ntruprime_sntrup761;SIG_sphincs_shake_128f_simple;KEM_ml_kem_512;KEM_ml_kem_768;KEM_ml_kem_1024;SIG_slh_dsa_pure_shake_128f;SIG_ml_dsa_44;SIG_ml_dsa_65;SIG_ml_dsa_87" && ninja && ninja install && cmake -G"Ninja" .. -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=OFF -DOQS_PERMIT_UNSUPPORTED_ARCHITECTURE=ON -DOQS_USE_OPENSSL=OFF -DOQS_MINIMAL_BUILD="KEM_ntruprime_sntrup761;SIG_sphincs_shake_128f_simple;KEM_ml_kem_512;KEM_ml_kem_768;KEM_ml_kem_1024;SIG_slh_dsa_pure_shake_128f;SIG_ml_dsa_44;SIG_ml_dsa_65;SIG_ml_dsa_87" && ninja && ninja install`. Instead of the two `ninja install` commands, you can instead make sure Maven can find the requisite files by adding `-Dliboqs.include.dir=.../liboqs/build/include -Dliboqs.lib.dir=.../liboqs/build/lib` for `compile` and `package` commands above. Requires cmake and ninja (e.g. `apt install cmake ninja-build` on Ubuntu)
