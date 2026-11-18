@@ -298,7 +298,7 @@ public class CryptoExchange
       ChainCert pk = allow.process_chain(null, "key-allowlist", this.__allowlist, this.__denylist);
       ChainCert apk = new ChainCert().unpackb(pk.getExtra(0).asRawValue().asByteArray());
       if (!pk.pk.equals(apk.pk)) throw new KafkaCryptoInternalError("Mismatch in keys for allowlist.");
-      if (!this.__allowlist.contains(apk)) {
+      if (ChainCert.key_in_list(apk,this.__allowlist) == null) {
         this.__allowlist.add(apk);
         return apk;
       }
@@ -321,7 +321,7 @@ public class CryptoExchange
       ChainCert pk = deny.process_chain(null, "key-denylist", this.__allowlist, this.__denylist);
       ChainCert apk = new ChainCert().unpackb(pk.getExtra(0).asRawValue().asByteArray());
       if (!pk.pk.equals(apk.pk)) throw new KafkaCryptoInternalError("Mismatch in keys for denylist.");
-      if (!this.__denylist.contains(apk)) {
+      if (ChainCert.key_in_list(apk,this.__denylist) == null) {
         this.__denylist.add(apk);
         return apk;
       }
