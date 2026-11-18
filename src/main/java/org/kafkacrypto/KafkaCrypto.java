@@ -232,6 +232,8 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
       try {
         if (this._tps_updated) {
           this._kc.assign(this._tps.keySet());
+          for (Map.Entry<TopicPartition, OffsetAndMetadata> tpo : this._tps.entrySet())
+            this._kc.seek(tpo.getKey(), tpo.getValue());
           this._tps_updated = false;
         }
       } finally {
