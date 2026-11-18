@@ -251,7 +251,9 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
           // Periodically prune away keys that never arrived, or that are too stale
           List<byte[]> staleki = new ArrayList<byte[]>();
           for (byte[] keyidx : this._cgens.get(root).keySet()) {
-            if (!this._cgens.get(root).get(keyidx).acquired && this._cgens.get(root).get(keyidx).creation+Long.parseLong(this._config.getProperty("MGMT_KEYINDEX_MAX_WAIT_SECS")) < Utils.currentTime())
+            if (!this._cgens.get(root).get(keyidx).acquired && this._cgens.get(root).get(keyidx).creation+Double.parseDouble(this._config.getProperty("MGMT_KEYINDEX_MAX_WAIT_SECS")) < Utils.currentTime())
+              staleki.add(keyidx);
+            if (this._cgens.get(root).get(keyidx).acquired && this._cgens.get(root).get(keyidx).birth+Double.parseDouble(this._config.getProperty("CRYPTO_MAX_CGEN_AGE"))<Utils.currentTime())
               staleki.add(keyidx);
           }
           for (byte[] keyidx : staleki) {

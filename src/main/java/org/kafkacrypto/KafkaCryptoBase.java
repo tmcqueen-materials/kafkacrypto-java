@@ -140,6 +140,7 @@ class KafkaCryptoBase
     this._config.setProperty("TOPIC_SUFFIX_SUBS", ".subs");
     this._config.setProperty("TOPIC_SUFFIX_KEYS", ".keys");
     this._config.setProperty("TOPIC_SUFFIX_REQS", ".reqs");
+    this._config.setProperty("CRYPTO_MAX_CGEN_AGE", "86401"); // should be at least 1 second longer than maximum ratchet time by producer
     this._config.setProperty("CRYPTO_MAX_PGEN_AGE", "604800");
     this._config.setProperty("CRYPTO_SUB_INTERVAL", "60");
     this._config.setProperty("CRYPTO_RATCHET_INTERVAL", "86400");
