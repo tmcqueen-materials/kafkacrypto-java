@@ -22,6 +22,7 @@ import org.kafkacrypto.msgs.CryptoState;
 import org.kafkacrypto.msgs.SignedChain;
 import org.kafkacrypto.msgs.KafkaPlainWireMessage;
 import org.kafkacrypto.msgs.KafkaCryptoWireMessage;
+import org.kafkacrypto.msgs.KafkaCryptoUndecryptableWireMessage;
 import org.kafkacrypto.exceptions.KafkaCryptoException;
 import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
 import org.kafkacrypto.exceptions.KafkaCryptoSerializeError;
@@ -456,6 +457,8 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
         if (msg == null) return null;
         if (KafkaPlainWireMessage.class.isAssignableFrom(msg.getClass()))
           return msg;
+        if (KafkaCryptoUndecryptableWireMessage.class.isAssignableFrom(msg.getClass()))
+          return msg;
         if (KafkaCryptoWireMessage.class.isAssignableFrom(msg.getClass())) {
           KafkaCryptoWireMessage msg2 = (KafkaCryptoWireMessage)msg;
           msg2.root = root;
@@ -490,7 +493,9 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
             this._parent._lock.unlock();
             Thread.sleep(this._kwi);
             this._parent._lock.lock();
-            ek = this._parent._cgens.get(msg.root).get(msg.keyIndex);
+            EncryptionKey newek = this._parent._cgens.get(msg.root).get(msg.keyIndex);
+            if (newek != null && newek != ek)
+              ek = newek;
             i--;
           }
           if (ek.acquired) {
