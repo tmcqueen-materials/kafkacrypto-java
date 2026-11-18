@@ -14,6 +14,7 @@ import java.math.BigInteger;
 
 import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.lang.UnsupportedOperationException;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -139,7 +140,11 @@ public class Ratchet extends KeyGenerator
     _logger.warn("  New ratchet initialized without key escrow.");
     rff.keyidx = BigInteger.valueOf(0);
     try {
-      Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+      try {
+        Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+      } catch (UnsupportedOperationException uoe) {
+        _logger.warn("  Error setting restrictive permissions on file.",uoe);
+      }
       Files.write(Paths.get(file), msgpack.packb(rff));
     } catch (IOException ioe) {
       _logger.warn("  Error writing file.",ioe);

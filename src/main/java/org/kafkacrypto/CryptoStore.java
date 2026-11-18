@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.UnsupportedOperationException;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -44,7 +45,11 @@ class CryptoStore
     this._logger = LoggerFactory.getLogger("kafkacrypto-java.cryptostore");
     if (!(new File(file).exists()) && nodeID != null && nodeID.length() > 0) {
       try {
-        Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        try {
+          Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        } catch (UnsupportedOperationException uoe) {
+          this._logger.warn("  Error setting restrictive permissions on file.",uoe);
+        }
         Files.write(Paths.get(file), new byte[0]);
       } catch (IOException ioe) {
         this._logger.warn("  Error writing file.",ioe);

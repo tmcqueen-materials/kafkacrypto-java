@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermissions;
 
 import java.io.IOException;
+import java.lang.UnsupportedOperationException;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -239,7 +240,11 @@ public class CryptoKey
     ckff.versions.add(Byte.valueOf((byte)2));
     ckff.versions.add(Byte.valueOf((byte)1));
     try {
-      Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+      try {
+        Files.createFile(Paths.get(file), PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+      } catch (UnsupportedOperationException uoe) {
+        _logger.warn("  Error setting restrictive permissions on file.",uoe);
+      }
       Files.write(Paths.get(file), msgpack.packb(ckff));
     } catch (IOException ioe) {
       _logger.warn("  Error writing file.",ioe);
