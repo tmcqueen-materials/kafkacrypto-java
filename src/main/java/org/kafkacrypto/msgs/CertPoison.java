@@ -43,7 +43,10 @@ public interface CertPoison<E>
           if (wanted.equals(c)) return true;
         } else {
           // c is a regex
-          if (Pattern.matches(c, wanted)) return true;
+          String tmpc = c;
+          if (!c.endsWith("$")) // Make prefix match as in Python
+            tmpc += ".*";
+          if (Pattern.matches(tmpc, wanted)) return true;
         }
       } else {
         // Wanted is a regex.
