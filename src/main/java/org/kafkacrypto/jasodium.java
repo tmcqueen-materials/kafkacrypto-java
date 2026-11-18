@@ -22,12 +22,21 @@ public class jasodium
   }
 
   private static final int CRYPTO_BLAKE2B_SALT_BYTES = 16;
+  private static final int CRYPTO_BLAKE2B_PERSONALBYTES = 16;
 
   public static byte[] crypto_generichash_blake2b_salt_personal(byte[] message, int outlen, byte[] key, byte [] salt, byte[] personal)
   {
     byte[] rv = new byte[(outlen>0)?(outlen):(32)];
     if (salt == null || salt.length != jasodium.CRYPTO_BLAKE2B_SALT_BYTES)
       throw new KafkaCryptoInternalError("Incorrect Blake2b Salt Length!");
+    // Personalization is optional, and should be up to 16 bytes. So zero pad if less than 16, and raise error if longer
+    if (personal != null && personal.length > jasodium.CRYPTO_BLAKE2B_PERSONALBYTES) {
+      throw new KafkaCryptoInternalError("Too long Blake2b Personalization Length!");
+    }
+    byte[] orig_personal = personal;
+    personal = new byte[16];
+    if (orig_personal != null)
+      System.arraycopy(orig_personal, 0, personal, 0, orig_personal.length);
     jasodium._check(kalium.crypto_generichash_blake2b_salt_personal(rv, rv.length, message, (message!=null)?(message.length):(0), key, (key!=null)?(key.length):(0), salt, personal));
     return rv;
   }
