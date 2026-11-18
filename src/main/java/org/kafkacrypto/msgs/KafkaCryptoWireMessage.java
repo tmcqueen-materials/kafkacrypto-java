@@ -9,7 +9,6 @@ import org.kafkacrypto.KafkaCryptoMessage;
 import org.kafkacrypto.KafkaCryptoMessageDecryptor;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.Msgpacker;
-import org.kafkacrypto.msgs.KafkaCryptoUndecryptableWireMessage;
 import org.kafkacrypto.exceptions.KafkaCryptoMessageException;
 
 import java.io.IOException;
@@ -43,12 +42,8 @@ public class KafkaCryptoWireMessage implements Msgpacker<KafkaCryptoWireMessage>
       this.salt = src.get(1).asRawValue().asByteArray();
       this.msg = src.get(2).asRawValue().asByteArray();
       return this;
-    } else {
-      byte[] raw = new byte[0];
-      for (Value next : src)
-        raw = Utils.concatArrays(raw, next.asRawValue().asByteArray());
-      return new KafkaCryptoUndecryptableWireMessage(raw);
     }
+    return null;
   }
 
   public void packb(MessagePacker packer) throws IOException
