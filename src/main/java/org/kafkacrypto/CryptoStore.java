@@ -408,8 +408,8 @@ class CryptoStore
     this._logger.warn("Initializing new CryptoStore nodeID={}", nodeID);
     this.store_value("test", "", "test");
     this.store_value("test", "", (ByteString)null);
-    this._logger.warn("  Including a default/temporary root of trust. Once proper access is provisioned, this root of trust should be removed or distrusted.");
-    this.store_value("temporary", "allowlist", Utils.hexToBytes("9300ab9192a7706174686c656e02da00201a13b0aecdd6751c7dfa43e43284326ad01dbc20a8a00b1566092ab0a542620f"));
+    this.store_value("test", "allowlist", "test");
+    this.store_value("test", "allowlist", (ByteString)null);
     this.store_value("test", "denylist", "test");
     this.store_value("test", "denylist", (ByteString)null);
     this.store_value("test", "crypto", "test");
