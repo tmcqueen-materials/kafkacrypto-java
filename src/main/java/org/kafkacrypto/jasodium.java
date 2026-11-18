@@ -21,9 +21,13 @@ public class jasodium
       throw new KafkaCryptoInternalError("libsodium return value check failed!");
   }
 
+  private static final int CRYPTO_BLAKE2B_SALT_BYTES = 16;
+
   public static byte[] crypto_generichash_blake2b_salt_personal(byte[] message, int outlen, byte[] key, byte [] salt, byte[] personal)
   {
     byte[] rv = new byte[(outlen>0)?(outlen):(32)];
+    if (salt == null || salt.length != jasodium.CRYPTO_BLAKE2B_SALT_BYTES)
+      throw new KafkaCryptoInternalError("Incorrect Blake2b Salt Length!");
     jasodium._check(kalium.crypto_generichash_blake2b_salt_personal(rv, rv.length, message, (message!=null)?(message.length):(0), key, (key!=null)?(key.length):(0), salt, personal));
     return rv;
   }
@@ -52,6 +56,8 @@ public class jasodium
   public static byte[] crypto_sign(byte[] message, byte[] key)
   {
     byte[] rv = new byte[kalium.CRYPTO_SIGN_ED25519_BYTES+((message!=null)?(message.length):(0))];
+    if (key == null || key.length != kalium.CRYPTO_SIGN_ED25519_SECRETKEYBYTES)
+      throw new KafkaCryptoInternalError("Incorrect Ed25519 Secret Key Length!");
     LongLongByReference len = new LongLongByReference(rv.length);
     jasodium._check(kalium.crypto_sign_ed25519(rv, len, message, (message!=null)?(message.length):(0), key));
     if (len.getValue() != rv.length) throw new KafkaCryptoInternalError("Signed message not expected size.");
@@ -61,6 +67,8 @@ public class jasodium
   public static byte[] crypto_sign_open(byte[] cipher, byte[] pk)
   {
     if (cipher.length < jasodium.CRYPTO_SIGN_SIGNATURE_BYTES) throw new KafkaCryptoInternalError("Signed message too short.");
+    if (pk == null || pk.length != kalium.CRYPTO_SIGN_ED25519_PUBLICKEYBYTES)
+      throw new KafkaCryptoInternalError("Incorrect Ed25519 Public Key Length!");
     byte[] rv = new byte[cipher.length-jasodium.CRYPTO_SIGN_SIGNATURE_BYTES];
     LongLongByReference len = new LongLongByReference(rv.length);
     jasodium._check(kalium.crypto_sign_ed25519_open(rv, len, cipher, cipher.length, pk));
@@ -70,6 +78,8 @@ public class jasodium
 
   public static byte[][] crypto_sign_seed_keypair(byte[] seed)
   {
+    if (seed == null || seed.length != jasodium.CRYPTO_SIGN_SEED_BYTES)
+      throw new KafkaCryptoInternalError("Incorrect Ed25519 Seed Length!");
     byte[][] rv = new byte[2][];
     rv[0] = new byte[kalium.CRYPTO_SIGN_ED25519_PUBLICKEYBYTES];
     rv[1] = new byte[kalium.CRYPTO_SIGN_ED25519_SECRETKEYBYTES];
@@ -92,12 +102,16 @@ public class jasodium
   private static final int CRYPTO_SECRETBOX_XSALSA20POLY1305_ZEROBYTES = CRYPTO_SECRETBOX_XSALSA20POLY1305_MACBYTES + CRYPTO_SECRETBOX_XSALSA20POLY1305_BOXZEROBYTES;
   public static byte[] crypto_secretbox_auto(byte[] message, byte[] key)
   {
+    if (key == null || key.length != jasodium.CRYPTO_SECRETBOX_KEYBYTES)
+      throw new KafkaCryptoInternalError("Incorrect SecretBox Key Length!");
     byte[] nonce = jasodium.randombytes(kalium.CRYPTO_SECRETBOX_XSALSA20POLY1305_NONCEBYTES);
     return Utils.concatArrays(nonce, jasodium.crypto_secretbox(message, nonce, key));
   }
 
   public static byte[] crypto_box_seal(byte[] message, byte[] pk)
   {
+    if (pk == null || pk.length != kalium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_PUBLICKEYBYTES)
+      throw new KafkaCryptoInternalError("Incorrect Box Public Key Length!");
     byte[] rv = new byte[kalium.CRYPTO_BOX_SEALBYTES+message.length];
     jasodium._check(kalium.crypto_box_seal(rv, message, message.length, pk));
     return rv;
@@ -105,6 +119,10 @@ public class jasodium
 
   public static byte[] crypto_secretbox(byte[] message, byte[] nonce, byte[] key)
   {
+    if (key == null || key.length != jasodium.CRYPTO_SECRETBOX_KEYBYTES)
+      throw new KafkaCryptoInternalError("Incorrect SecretBox Key Length!");
+    if (nonce == null || nonce.length != kalium.CRYPTO_SECRETBOX_XSALSA20POLY1305_NONCEBYTES)
+      throw new KafkaCryptoInternalError("Incorrect SecretBox Nonce Length!");
     byte[] inp = (message!=null)?(Utils.concatArrays(new byte[jasodium.CRYPTO_SECRETBOX_XSALSA20POLY1305_ZEROBYTES], message)):(new byte[jasodium.CRYPTO_SECRETBOX_XSALSA20POLY1305_ZEROBYTES]);
     byte[] out = new byte[inp.length];
     jasodium._check(kalium.crypto_secretbox_xsalsa20poly1305(out, inp, inp.length, nonce, key));
@@ -113,12 +131,18 @@ public class jasodium
 
   public static byte[] crypto_secretbox_open_auto(byte[] cipher, byte[] key)
   {
+    if (key == null || key.length != jasodium.CRYPTO_SECRETBOX_KEYBYTES)
+      throw new KafkaCryptoInternalError("Incorrect SecretBox Key Length!");
     byte[][] bits = Utils.splitArray(cipher,kalium.CRYPTO_SECRETBOX_XSALSA20POLY1305_NONCEBYTES);
     return crypto_secretbox_open(bits[1],bits[0],key);
   }
 
   public static byte[] crypto_secretbox_open(byte[] cipher, byte[] nonce, byte[] key)
   {
+    if (key == null || key.length != jasodium.CRYPTO_SECRETBOX_KEYBYTES)
+      throw new KafkaCryptoInternalError("Incorrect SecretBox Key Length!");
+    if (nonce == null || nonce.length != kalium.CRYPTO_SECRETBOX_XSALSA20POLY1305_NONCEBYTES)
+      throw new KafkaCryptoInternalError("Incorrect SecretBox Nonce Length!");
     byte[] inp = Utils.concatArrays(new byte[jasodium.CRYPTO_SECRETBOX_XSALSA20POLY1305_BOXZEROBYTES], cipher);
     byte[] rv = new byte[inp.length];
     jasodium._check(kalium.crypto_secretbox_xsalsa20poly1305_open(rv, inp, inp.length, nonce, key));
@@ -128,12 +152,18 @@ public class jasodium
   public static final int CRYPTO_SCALARMULT_CURVE25519_BYTES=kalium.CRYPTO_SCALARMULT_CURVE25519_BYTES;
   public static byte[] crypto_scalarmult_curve25519_base(byte[] key)
   {
+    if (key == null || key.length != jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES)
+      throw new KafkaCryptoInternalError("Incorrect ScalarMult Key Length!");
     byte[] rv = new byte[jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES];
     jasodium._check(kalium.crypto_scalarmult_base(rv,key));
     return rv;
   }
   public static byte[] crypto_scalarmult_curve25519(byte[] scalar, byte[] point)
   {
+    if (scalar == null || scalar.length != jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES)
+      throw new KafkaCryptoInternalError("Incorrect ScalarMult Scalar Length!");
+    if (point == null || point.length != jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES)
+      throw new KafkaCryptoInternalError("Incorrect ScalarMult Point Length!");
     byte[] rv = new byte[jasodium.CRYPTO_SCALARMULT_CURVE25519_BYTES];
     jasodium._check(kalium.crypto_scalarmult_curve25519(rv, scalar, point));
     return rv;
@@ -143,6 +173,8 @@ public class jasodium
   private static final int CRYPTO_SIGN_ED25519_SEEDBYTES = 32;
   public static byte[] crypto_sign_sk_to_pk(byte[] sk)
   {
+    if (sk == null || sk.length != kalium.CRYPTO_SIGN_ED25519_SECRETKEYBYTES)
+      throw new KafkaCryptoInternalError("Incorrect SkToPk Secret Key Length!");
     return Utils.splitArray(sk,jasodium.CRYPTO_SIGN_ED25519_SEEDBYTES)[1];
   }
 }
