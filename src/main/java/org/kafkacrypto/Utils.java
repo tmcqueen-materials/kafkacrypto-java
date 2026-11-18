@@ -1,7 +1,6 @@
 package org.kafkacrypto;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.math.BigInteger;
 
 public class Utils
@@ -24,7 +23,15 @@ public class Utils
   public static byte[] reverseEndian(byte[] arg)
   {
     byte[] rv = Arrays.copyOf(arg,arg.length);
-    Collections.reverse(Arrays.asList(rv));
+    // More performant than lifting to Byte objects and using collections
+    int left = 0;
+    int right = rv.length - 1;
+    while (left < right) {
+      byte temp = rv[left];
+      rv[left] = rv[right];
+      rv[right] = temp;
+      left++; right--;
+    }
     return rv;
   }
 
