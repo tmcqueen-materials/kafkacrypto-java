@@ -5,15 +5,14 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.value.Value;
 
 import org.kafkacrypto.Utils;
-import org.kafkacrypto.KafkaCryptoMessage;
-import org.kafkacrypto.KafkaCryptoMessageDecryptor;
+import org.kafkacrypto.msgs.KafkaCryptoWireMessage;
 import org.kafkacrypto.msgs.msgpack;
 import org.kafkacrypto.msgs.Msgpacker;
 import org.kafkacrypto.exceptions.KafkaCryptoMessageException;
 
 import java.io.IOException;
 
-public class KafkaCryptoUndecryptableWireMessage implements KafkaCryptoMessage
+public class KafkaCryptoUndecryptableWireMessage extends KafkaCryptoWireMessage
 {
   public byte[] rawBytes = null;
 
@@ -25,6 +24,11 @@ public class KafkaCryptoUndecryptableWireMessage implements KafkaCryptoMessage
   {
     this();
     this.rawBytes = rawBytes;
+  }
+
+  public void setCleartext(byte[] msg)
+  {
+    return;
   }
 
   public boolean isCleartext()
@@ -47,4 +51,13 @@ public class KafkaCryptoUndecryptableWireMessage implements KafkaCryptoMessage
     return this.rawBytes;
   }
 
+  public KafkaCryptoWireMessage unpackb(List<Value> src) throws IOException
+  {
+    return null;
+  }
+
+  public void packb(MessagePacker packer) throws IOException
+  {
+    return;
+  }
 }
