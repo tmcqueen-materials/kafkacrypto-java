@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import java.io.IOException;
 
@@ -249,12 +248,14 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
             this._tps_updated = true;
           }
           List<byte[]> needed = new ArrayList<byte[]>();
-          // Periodically prune away keys that never arrived.
-          Iterator<byte[]> iek = this._cgens.get(root).keySet().iterator();
-          while (iek.hasNext()) {
-            byte[] keyidx = iek.next();
+          // Periodically prune away keys that never arrived, or that are too stale
+          List<byte[]> staleki = new ArrayList<byte[]>();
+          for (byte[] keyidx : this._cgens.get(root).keySet()) {
             if (!this._cgens.get(root).get(keyidx).acquired && this._cgens.get(root).get(keyidx).creation+Long.parseLong(this._config.getProperty("MGMT_KEYINDEX_MAX_WAIT_SECS")) < Utils.currentTime())
-              iek.remove();
+              staleki.add(keyidx);
+          }
+          for (byte[] keyidx : staleki) {
+            this._cgens.get(root).remove(keyidx);
           }
           for (byte[] keyidx : this._cgens.get(root).keySet())
             try {
