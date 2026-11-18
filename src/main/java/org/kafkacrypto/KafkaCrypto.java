@@ -24,6 +24,7 @@ import org.kafkacrypto.msgs.KafkaPlainWireMessage;
 import org.kafkacrypto.msgs.KafkaCryptoWireMessage;
 import org.kafkacrypto.exceptions.KafkaCryptoException;
 import org.kafkacrypto.exceptions.KafkaCryptoInternalError;
+import org.kafkacrypto.exceptions.KafkaCryptoSerializeError;
 import org.kafkacrypto.msgs.ByteString;
 import org.kafkacrypto.KafkaCryptoMessage;
 import org.kafkacrypto.KafkaCryptoMessageDecryptor;
@@ -369,6 +370,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
         rv = msg.toWire();
       } catch (Throwable e) {
         this._parent._logger.warn("Exception during serialization", e);
+        throw new KafkaCryptoSerializeError("Exception during serialization", e);
       } finally {
         this._parent._lock.unlock();
       }
@@ -406,7 +408,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
       try {
         return data.toWire();
       } catch (IOException ioe) {
-        throw new KafkaCryptoInternalError("Error serializing KafkaCryptoMessage.", ioe);
+        throw new KafkaCryptoSerializeError("Error serializing KafkaCryptoMessage.", ioe);
       }
     }
   }
