@@ -6,6 +6,8 @@ import org.kafkacrypto.msgs.KafkaPlainWireMessage;
 
 import org.kafkacrypto.exceptions.KafkaCryptoMessageException;
 
+import org.msgpack.core.MessagePackException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,22 +28,28 @@ public interface KafkaCryptoMessage
 
   public static KafkaCryptoMessage fromWire(byte[] wire, boolean allowPlainWireMsgs)
   {
+    KafkaCryptoMessage rv = null;
     if (wire != null && wire.length > 0) {
       byte[][] msgs = Utils.splitArray(wire,1);
       try {
-        if (msgs[0][0] == 1)
-          return new KafkaCryptoWireMessage().unpackb(msgs[1]);
-        // Allowing a mix of encrypted and plain wire messages enables a third party to
-        // inject arbitrary frames that are indistinguishable from encrypted ones, which
-        // is a full integrity break. Thus we do not process plain messages unless
-        // explicitly enabled by users (who can check the class type to determine whether
-        // it was plain on the wire or not)
-        if (msgs[0][0] == 0 && allowPlainWireMsgs)
-          return new KafkaPlainWireMessage().unpackb(msgs[1]);
+        if (msgs[0][0] == 1) {
+          rv = new KafkaCryptoWireMessage().unpackb(msgs[1]);
+        } else if (msgs[0][0] == 0 && allowPlainWireMsgs) {
+          // Allowing a mix of encrypted and plain wire messages enables a third party to
+          // inject arbitrary frames that are indistinguishable from encrypted ones, which
+          // is a full integrity break. Thus we do not process plain messages unless
+          // explicitly enabled by users (who can check the class type to determine whether
+          // it was plain on the wire or not)
+          rv = new KafkaPlainWireMessage().unpackb(msgs[1]);
+        }
       } catch (IOException ioe) {
         KafkaCryptoMessage._logger.info("Error unpacking message", ioe);
+      } catch (MessagePackException mpe) {
+        KafkaCryptoMessage._logger.info("Error unpacking message", mpe);
       }
     }
+    if (rv != null)
+      return rv;
     // If we get here, permanently undecryptable
     return new KafkaCryptoUndecryptableWireMessage(wire);
   }
