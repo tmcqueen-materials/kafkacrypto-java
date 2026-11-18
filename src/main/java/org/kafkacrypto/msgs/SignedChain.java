@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import org.msgpack.value.Value;
 
 import java.io.IOException;
+import java.lang.IllegalArgumentException;
 
 public class SignedChain implements Msgpacker<SignedChain>
 {
@@ -122,6 +123,8 @@ public class SignedChain implements Msgpacker<SignedChain>
         SignedChain._logger.info("Issues encountered with chain", kcie);
       } catch (IOException ioe) {
         SignedChain._logger.info("Issues encountered with chain", ioe);
+      } catch (IllegalArgumentException iae) {
+        SignedChain._logger.info("Issues encountered with chain", iae);
       }
     }
     //TODO: Add self-signed denylisting.
