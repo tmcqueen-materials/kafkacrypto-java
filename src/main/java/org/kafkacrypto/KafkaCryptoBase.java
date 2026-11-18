@@ -151,6 +151,7 @@ class KafkaCryptoBase
     this._config.setProperty("MGMT_SUBSCRIBE_INTERVAL", "300");
     this._config.setProperty("MGMT_LONG_KEYINDEX", "true");
     this._config.setProperty("MGMT_KEYINDEX_MAX_LEN", "32");
+    this._config.setProperty("MGMT_KEYINDEX_MAX_WAIT_SECS", "86400");
     this._config.setProperty("DESER_INITIAL_WAIT_INTERVALS", "10");
     for (String e : this._config.stringPropertyNames()) {
       ByteString r = this._cryptostore.load_value(e,null,(ByteString)null);
