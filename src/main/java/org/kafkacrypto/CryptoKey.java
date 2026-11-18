@@ -38,6 +38,7 @@ public class CryptoKey
   private List<SignSecretKey> __ssk = new ArrayList<SignSecretKey>();
   private List<SignPublicKey> __spk = new ArrayList<SignPublicKey>();
   private List<Byte> __versions;
+  private List<Byte> __preferred_versions = null;
 
   private Map<String,Map<String,Map<Byte,KEMSecretKey>>> __eskepk;
   private Lock __eskepklock;
@@ -107,6 +108,11 @@ public class CryptoKey
     }
     this.__eskepklock = new ReentrantLock();
     this.__eskepk = new HashMap<String,Map<String,Map<Byte,KEMSecretKey>>>();
+    // Prefer hybrids in use_epks where available
+    this.__preferred_versions = new ArrayList<Byte>();
+    this.__preferred_versions.add((byte)5);
+    this.__preferred_versions.add((byte)2);
+    this.__preferred_versions.add((byte)1);
   }
 
 //  public SignPublicKey get_spk()
@@ -174,6 +180,8 @@ public class CryptoKey
 
   public Map<byte[],KEMPublicKey> use_epks(String topic, String usage, List<KEMPublicKey> pks, boolean clear)
   {
+    List<Byte> pv = this.__preferred_versions;
+    int ver_idx = -1;
     Map<byte[],KEMPublicKey> rv = new HashMap<byte[],KEMPublicKey>();
     this.__eskepklock.lock();
     try {
@@ -181,8 +189,15 @@ public class CryptoKey
         return rv;
       for (KEMPublicKey pk : pks) {
         if (this.__eskepk.get(topic).get(usage).containsKey(pk.getType())) {
-          KEMSecretKey ksk = this.__eskepk.get(topic).get(usage).get(pk.getType());
-          rv.put(ksk.complete_kem(pk), new KEMPublicKey(ksk));
+          if (pv == null || ver_idx == -1 || (pv.indexOf(pk.getType()) >= 0 && pv.indexOf(pk.getType()) < ver_idx)) {
+            if (pv != null && pv.indexOf(pk.getType()) >= 0) {
+              ver_idx = pv.indexOf(pk.getType());
+              // Remove any previous entries since this one is better
+              rv = new HashMap<byte[],KEMPublicKey>();
+            }
+            KEMSecretKey ksk = this.__eskepk.get(topic).get(usage).get(pk.getType());
+            rv.put(ksk.complete_kem(pk), new KEMPublicKey(ksk));
+          }
         }
       }
       if (clear)
@@ -206,6 +221,11 @@ public class CryptoKey
   public boolean use_legacy()
   {
     return this.__use_legacy;
+  }
+
+  public void set_preferred_versions(List<Byte> vers)
+  {
+    this.__preferred_versions = vers;
   }
 
   private void __init_empty_cryptokey(String file)
