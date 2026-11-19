@@ -104,7 +104,7 @@ public class KafkaCryptoStore extends CryptoStore
     this.store_value("test", "kafka-crypto", (ByteString)null);
     this.store_value("test", "kafka-crypto-consumer", "test");
     this.store_value("test", "kafka-crypto-consumer", (ByteString)null);
-    this.store_value("test", "kakfa-crypto-producer", "test");
-    this.store_value("test", "kakfa-crypto-producer", (ByteString)null);
+    this.store_value("test", "kafka-crypto-producer", "test");
+    this.store_value("test", "kafka-crypto-producer", (ByteString)null);
   }
 }
