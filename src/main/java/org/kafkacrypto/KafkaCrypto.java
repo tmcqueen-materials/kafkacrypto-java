@@ -125,7 +125,7 @@ public class KafkaCrypto extends KafkaCryptoBase implements Runnable
     this._running = true;
     this._mgmt_thread = new Thread(this, "process_mgmt_messages");
     this._mgmt_thread.setDaemon(true);
-    this._mgmt_thread.setDefaultUncaughtExceptionHandler(new DeadHandler());
+    this._mgmt_thread.setUncaughtExceptionHandler(new DeadHandler());
     this._mgmt_thread.start();
   }
 
