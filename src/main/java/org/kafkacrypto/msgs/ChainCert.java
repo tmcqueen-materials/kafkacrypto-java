@@ -158,7 +158,7 @@ public class ChainCert implements Msgpacker<ChainCert>
 
   public boolean validate_time(double time)
   {
-    if (time <= this.max_age)
+    if (time <= this.max_age || this.max_age == 0)
       return true;
     return false;
   }
