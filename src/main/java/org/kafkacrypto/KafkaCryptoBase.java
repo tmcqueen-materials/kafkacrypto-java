@@ -116,7 +116,7 @@ class KafkaCryptoBase
   public String get_root(String topic)
   {
     int lio = topic.indexOf(this._config.getProperty("TOPIC_SEPARATOR"));
-    return topic.substring(0,(lio>0)?(lio):(topic.length()));
+    return topic.substring(0,(lio>=0)?(lio):(topic.length()));
   }
 
   public void close()
