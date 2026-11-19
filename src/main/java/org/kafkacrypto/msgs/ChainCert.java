@@ -197,14 +197,22 @@ public class ChainCert implements Msgpacker<ChainCert>
     // enforce pathlen 0 unless explicitly overridden for key-allowlist and key-denylist
     boolean has_pathlen = false;
     boolean needs_pathlen0 = false;
-    for (CertPoison cp : rv.poisons) {
+    for (CertPoison cp : c2.poisons) {
       if (cp.poisonName().equals("pathlen"))
         has_pathlen = true;
-      if (cp.poisonName().equals("usages") && (((UsagesPoison)cp).usages.contains("key-allowlist") || ((UsagesPoison)cp).usages.contains("key-denylist")))
+      if (cp.poisonName().equals("usages") && (((UsagesPoison)cp).multimatch("key-allowlist") || ((UsagesPoison)cp).multimatch("key-denylist")))
         needs_pathlen0 = true;
     }
-    if (!has_pathlen && needs_pathlen0)
-      rv.poisons.add(new PathlenPoison(0));
+    if (!has_pathlen && needs_pathlen0) {
+      CertPoison pathlen_rv = null;
+      for (CertPoison cp : rv.poisons)
+        if (cp.poisonName().equals("pathlen"))
+          pathlen_rv = cp;
+      if (pathlen_rv != null)
+        ((PathlenPoison)pathlen_rv).max_pathlen = 0;
+      else
+        rv.poisons.add(new PathlenPoison(0));
+    }
     rv.pk = c2.pk;
     rv.pk_array = c2.pk_array;
     rv.extra = c2.extra;
