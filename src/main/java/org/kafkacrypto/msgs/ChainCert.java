@@ -23,7 +23,6 @@ public class ChainCert implements Msgpacker<ChainCert>
 {
   public double max_age = 0;
   public CertPoisons poisons;
-  public SignPublicKey parentpk = null;
   public SignPublicKey pk = null;
   public List<KEMPublicKey> pk_array = null;
   public List<Value> extra;

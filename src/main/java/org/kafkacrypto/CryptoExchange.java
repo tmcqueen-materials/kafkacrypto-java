@@ -116,12 +116,12 @@ public class CryptoExchange
       List<byte[]> msgs = new ArrayList<byte[]>();
       boolean doall = true;
       for (int idx = 0; idx < this.__cryptokey.get_num_spk(); idx++)
-        if (pk.parentpk != null && this.__cryptokey.get_spk(idx).getType() == pk.parentpk.getType()) {
+        if (pk.pk != null && this.__cryptokey.get_spk(idx).getType() == pk.pk.getType()) {
           doall = false;
           break; // found a matching type
         }
       for (int idx = 0; idx < this.__cryptokey.get_num_spk(); idx++) {
-        if (!doall && pk.parentpk != null && this.__cryptokey.get_spk(idx).getType() != pk.parentpk.getType()) // if we have a matching type as request, use only that
+        if (!doall && pk.pk != null && this.__cryptokey.get_spk(idx).getType() != pk.pk.getType()) // if we have a matching type as request, use only that
           continue;
         byte[] msg = this.__cryptokey.sign_spk(msgpack.packb(cc),idx);
         this.__spk_lock.lock();
