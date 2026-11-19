@@ -209,10 +209,12 @@ public class ChainCert implements Msgpacker<ChainCert>
       for (CertPoison cp : rv.poisons)
         if (cp.poisonName().equals("pathlen"))
           pathlen_rv = cp;
-      if (pathlen_rv != null)
-        ((PathlenPoison)pathlen_rv).max_pathlen = 0;
-      else
+      if (pathlen_rv != null) {
+        int old_max_pathlen = ((PathlenPoison)pathlen_rv).max_pathlen;
+        ((PathlenPoison)pathlen_rv).max_pathlen = (old_max_pathlen<0)?:(old_max_mathlen):(0);
+      } else {
         rv.poisons.add(new PathlenPoison(0));
+      }
     }
     rv.parentpk = c1.pk;
     rv.pk = c2.pk;
