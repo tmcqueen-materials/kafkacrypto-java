@@ -157,10 +157,8 @@ public class CryptoExchange
       byte[] random0 = rnd.get(0).asRawValue().asByteArray();
       this.__randoms_lock.lock();
       try {
-        if (this.__randoms.containsKey(topic)) {
-          if (!this.__randoms.get(topic).contains(new ByteArrayWrapper(random0)))
-            return null;
-        }
+        if (!this.__randoms.containsKey(topic) || !this.__randoms.get(topic).contains(new ByteArrayWrapper(random0)))
+          return null;
       } finally {
         this.__randoms_lock.unlock();
       }
