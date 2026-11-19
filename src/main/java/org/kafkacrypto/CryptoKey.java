@@ -128,7 +128,7 @@ public class CryptoKey
     for (int i = 0; i < this.__ssk_all.size(); i++) {
       int j = 0;
       for (; j < keytypes.size(); j++)
-        if (this.__ssk_all.get(i).getType() == keytypes.get(j));
+        if (this.__ssk_all.get(i).getType() == keytypes.get(j)) break;
       if (j < keytypes.size()) {// found!
         this.__ssk.add(this.__ssk_all.get(i));
         this.__spk.add(this.__spk_all.get(i));
