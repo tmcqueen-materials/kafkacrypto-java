@@ -47,9 +47,9 @@ public class KafkaCryptoStore extends CryptoStore
     for (String e : extra) {
       if (extra0 == null)
         extra0 = e;
-      extras.add("kafka-" + extra);
+      extras.add("kafka-" + e);
       if (use != null)
-        extras.add("kafka-" + extra + "-" + use);
+        extras.add("kafka-" + e + "-" + use);
     }
     for (String e : extras) {
       Map<ByteString,ByteString> add_config = this.load_section(e,false);
