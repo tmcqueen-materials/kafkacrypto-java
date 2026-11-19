@@ -196,25 +196,29 @@ public class ChainCert implements Msgpacker<ChainCert>
       if (c1.get_poison(cp.poisonName()) == null)
         rv.poisons.add(cp);
     // enforce pathlen 0 unless explicitly overridden for key-allowlist and key-denylist
-    boolean has_pathlen = false;
-    boolean needs_pathlen0 = false;
+    PathlenPoison pl1 = null, pl2 = null;
+    boolean pl_update = false;
+    for (CertPoison cp : c1.poisons) {
+      if (cp.poisonName().equals("pathlen"))
+        pl1 = (PathlenPoison)cp;
+      if (cp.poisonName().equals("usages") && (((UsagesPoison)cp).multimatch("key-allowlist") || ((UsagesPoison)cp).multimatch("key-denylist"))) {
+        pl_update = true;
+        if (pl1 == null) pl1 = new PathlenPoison();
+      }
+    }
     for (CertPoison cp : c2.poisons) {
       if (cp.poisonName().equals("pathlen"))
-        has_pathlen = true;
-      if (cp.poisonName().equals("usages") && (((UsagesPoison)cp).multimatch("key-allowlist") || ((UsagesPoison)cp).multimatch("key-denylist")))
-        needs_pathlen0 = true;
-    }
-    if (!has_pathlen && needs_pathlen0) {
-      CertPoison pathlen_rv = null;
-      for (CertPoison cp : rv.poisons)
-        if (cp.poisonName().equals("pathlen"))
-          pathlen_rv = cp;
-      if (pathlen_rv != null) {
-        int old_max_pathlen = ((PathlenPoison)pathlen_rv).max_pathlen;
-        ((PathlenPoison)pathlen_rv).max_pathlen = (old_max_pathlen<0)?:(old_max_mathlen):(0);
-      } else {
-        rv.poisons.add(new PathlenPoison(0));
+        pl2 = (PathlenPoison)cp;
+      if (cp.poisonName().equals("usages") && (((UsagesPoison)cp).multimatch("key-allowlist") || ((UsagesPoison)cp).multimatch("key-denylist"))) {
+        pl_update = true;
+        if (pl2 == null) pl2 = new PathlenPoison();
       }
+    }
+    if (pl_update) {
+      CertPoison newpl = (pl1 != null) ? (pl1.intersect_poison(pl2,same_pk)) : (pl2);
+      // Replace in return
+      rv.poisons.removeIf(cp -> cp.poisonName().equals("pathlen"));
+      rv.poisons.add(newpl); // newpl will not be null, because to get to this block, either pl1 or pl2 will be set.
     }
     rv.parentpk = c1.pk;
     rv.pk = c2.pk;
